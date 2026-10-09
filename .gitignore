@@ -1,0 +1,23 @@
+
+# Java compiled files
+*.class
+
+# Maven build output
+target/
+
+# Gradle cache and build output
+.gradle/
+build/
+
+# IDE files
+.classpath
+.project
+.settings/
+
+# Logs
+logs/
+*.log
+
+# Uploads and sensitive configuration
+# uploads/
+# application-local.properties

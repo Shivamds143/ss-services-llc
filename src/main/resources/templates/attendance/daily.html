@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'attendance', 'Attendance')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold">Daily Attendance Entry</h5>
+        <p class="text-muted small mb-0" th:text="${#temporals.format(viewDate,'EEEE, dd MMMM yyyy')}"></p>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- Bulk Mark Form -->
+        <form th:action="@{/attendance/bulk-mark}" method="post" class="d-flex gap-2">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="date" th:value="${viewDate}"/>
+            <select name="defaultType" class="form-select form-select-sm" style="width:145px;">
+                <option value="PRESENT">Present (P)</option>
+                <option value="ABSENT">Absent (A)</option>
+                <option value="HALF_DAY">Half Day (HD)</option>
+                <option value="LEAVE">Leave (L)</option>
+                <option value="HOLIDAY">Holiday (H)</option>
+                <option value="WEEK_OFF">Week Off (WO)</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-success">
+                <i class="fas fa-check-double me-1"></i>Bulk Mark
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Date Navigation -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 d-flex align-items-center gap-3 flex-wrap">
+        <a th:href="@{/attendance(date=${viewDate.minusDays(1)})}" class="btn btn-outline-secondary btn-sm">«</a>
+        <form th:action="@{/attendance}" method="get" class="d-flex gap-2">
+            <input type="date" name="date" class="form-control form-control-sm"
+                   th:value="${viewDate}" style="width:150px;"/>
+            <button class="btn btn-primary btn-sm">Go</button>
+        </form>
+        <a th:href="@{/attendance(date=${viewDate.plusDays(1)})}" class="btn btn-outline-secondary btn-sm">»</a>
+        <a th:href="@{/attendance}" class="btn btn-outline-info btn-sm">Today</a>
+
+        <!-- Summary Counts — values come from controller, no lambdas -->
+        <div class="ms-auto d-flex gap-2 flex-wrap">
+            <span class="badge bg-success px-2 py-2">P: <span th:text="${presentCount}">0</span></span>
+            <span class="badge bg-danger px-2 py-2">A: <span th:text="${absentCount}">0</span></span>
+            <span class="badge bg-warning text-dark px-2 py-2">HD: <span th:text="${halfDayCount}">0</span></span>
+            <span class="badge bg-secondary px-2 py-2">L: <span th:text="${leaveCount}">0</span></span>
+            <span class="badge bg-info text-dark px-2 py-2">H: <span th:text="${holidayCount}">0</span></span>
+            <span class="badge bg-dark px-2 py-2">WO: <span th:text="${weekOffCount}">0</span></span>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <span class="badge bg-success px-3 py-2"><i class="fas fa-circle me-1"></i>P – Present</span>
+    <span class="badge bg-danger px-3 py-2"><i class="fas fa-circle me-1"></i>A – Absent</span>
+    <span class="badge bg-warning text-dark px-3 py-2"><i class="fas fa-circle me-1"></i>HD – Half Day</span>
+    <span class="badge bg-secondary px-3 py-2"><i class="fas fa-circle me-1"></i>L – Leave</span>
+    <span class="badge bg-info text-dark px-3 py-2"><i class="fas fa-circle me-1"></i>H – Holiday</span>
+    <span class="badge bg-dark px-3 py-2"><i class="fas fa-circle me-1"></i>WO – Week Off</span>
+</div>
+
+<!-- Attendance Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Emp ID</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Status</th>
+                        <th>In Time</th>
+                        <th>Out Time</th>
+                        <th>Hours</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+    <tr th:each="emp, iStat : ${allEmployees}"
+        th:with="rec=${attendanceMap[emp.id]}">
+
+        <td class="text-muted small" th:text="${iStat.count}"></td>
+        <td><span class="badge bg-secondary" th:text="${emp.employeeId}"></span></td>
+        <td class="fw-semibold" th:text="${emp.employeeName}"></td>
+        <td class="text-muted small" th:text="${emp.designation ?: '-'}"></td>
+
+        <!-- Status Badge -->
+        <td>
+            <span th:if="${rec != null}" class="badge fw-semibold"
+                  th:classappend="${rec.attendanceType.name() == 'PRESENT'}  ? 'bg-success' :
+                                 (${rec.attendanceType.name() == 'ABSENT'}   ? 'bg-danger' :
+                                 (${rec.attendanceType.name() == 'HALF_DAY'} ? 'bg-warning text-dark' :
+                                 (${rec.attendanceType.name() == 'LEAVE'}    ? 'bg-secondary' :
+                                 (${rec.attendanceType.name() == 'HOLIDAY'}  ? 'bg-info text-dark' :
+                                 (${rec.attendanceType.name() == 'WEEK_OFF'} ? 'bg-dark' : 'bg-light text-dark')))))"
+                  th:text="${rec.attendanceType.name() == 'PRESENT'}  ? 'P – Present' :
+                           (${rec.attendanceType.name() == 'ABSENT'}  ? 'A – Absent' :
+                           (${rec.attendanceType.name() == 'HALF_DAY'} ? 'HD – Half Day' :
+                           (${rec.attendanceType.name() == 'LEAVE'}   ? 'L – Leave' :
+                           (${rec.attendanceType.name() == 'HOLIDAY'} ? 'H – Holiday' :
+                           (${rec.attendanceType.name() == 'WEEK_OFF'} ? 'WO – Week Off' : ${rec.attendanceType.name()})))))">
+            </span>
+            <span th:if="${rec == null}" class="badge bg-light text-muted border">Not Marked</span>
+        </td>
+
+        <!-- In Time -->
+        <td>
+            <span th:if="${rec != null and rec.inTime != null}"
+                  class="text-success fw-semibold small"
+                  th:text="${rec.inTime}"></span>
+            <span th:if="${rec == null or rec.inTime == null}" class="text-muted">–</span>
+        </td>
+
+        <!-- Out Time -->
+        <td>
+            <span th:if="${rec != null and rec.outTime != null}"
+                  class="text-danger fw-semibold small"
+                  th:text="${rec.outTime}"></span>
+            <span th:if="${rec == null or rec.outTime == null}" class="text-muted">–</span>
+        </td>
+
+        <!-- Working Hours -->
+        <td>
+            <span th:if="${rec != null and rec.workingHours != null}"
+                  class="badge bg-light text-dark border"
+                  th:text="${rec.workingHours} + ' hrs'"></span>
+            <span th:unless="${rec != null and rec.workingHours != null}"
+                  class="text-muted">–</span>
+        </td>
+
+        <!-- Action -->
+        <td>
+            <button type="button"
+                    class="btn btn-sm btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#markModal"
+                    th:data-empid="${emp.id}"
+                    th:data-empname="${emp.employeeName}"
+                    th:data-current="${rec != null ? rec.attendanceType.name() : ''}"
+                    th:data-intime="${rec != null and rec.inTime != null ? rec.inTime : ''}"
+                    th:data-outtime="${rec != null and rec.outTime != null ? rec.outTime : ''}"
+                    th:data-remarks="${rec != null and rec.remarks != null ? rec.remarks : ''}">
+                <i th:class="${rec != null} ? 'fas fa-edit' : 'fas fa-plus'"></i>
+                <span th:text="${rec != null} ? ' Edit' : ' Mark'"></span>
+            </button>
+        </td>
+    </tr>
+
+    <tr th:if="${#lists.isEmpty(allEmployees)}">
+        <td colspan="9" class="text-center text-muted py-4">No active employees found.</td>
+    </tr>
+</tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MARK / EDIT ATTENDANCE MODAL
+════════════════════════════════════════ -->
+<div class="modal fade" id="markModal" tabindex="-1" aria-labelledby="markModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="markModalLabel">
+                    <i class="fas fa-clipboard-check me-2"></i>Mark Attendance
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/attendance/mark}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="employeeId" id="modalEmpId"/>
+                <input type="hidden" name="attendanceDate" th:value="${viewDate}"/>
+
+                <div class="modal-body">
+                    <p class="mb-3">Marking attendance for:
+                        <strong id="modalEmpName" class="text-primary"></strong>
+                    </p>
+
+                    <!-- Attendance Type — Quick Buttons -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Attendance Type</label>
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-success att-btn" data-val="PRESENT">P – Present</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger att-btn"  data-val="ABSENT">A – Absent</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning att-btn" data-val="HALF_DAY">HD – Half Day</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary att-btn" data-val="LEAVE">L – Leave</button>
+                            <button type="button" class="btn btn-sm btn-outline-info att-btn"    data-val="HOLIDAY">H – Holiday</button>
+                            <button type="button" class="btn btn-sm btn-outline-dark att-btn"    data-val="WEEK_OFF">WO – Week Off</button>
+                        </div>
+                        <select name="attendanceType" id="attendanceTypeSelect" class="form-select form-select-sm" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="PRESENT">P – Present</option>
+                            <option value="ABSENT">A – Absent</option>
+                            <option value="HALF_DAY">HD – Half Day</option>
+                            <option value="LEAVE">L – Leave</option>
+                            <option value="HOLIDAY">H – Holiday</option>
+                            <option value="WEEK_OFF">WO – Week Off</option>
+                        </select>
+                    </div>
+
+                    <!-- In / Out Time (hidden for Absent / Holiday / Week Off / Leave) -->
+                    <div id="timeSection">
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">In Time</label>
+                                <input type="time" name="inTime" id="modalInTime" class="form-control" value="09:00"/>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Out Time</label>
+                                <input type="time" name="outTime" id="modalOutTime" class="form-control" value="18:00"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="mb-1">
+                        <label class="form-label fw-semibold">Remarks <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="remarks" id="modalRemarks" class="form-control"
+                               placeholder="e.g. Medical leave, approved WFH…"/>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Attendance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+const NO_TIME_TYPES = ['ABSENT', 'HOLIDAY', 'WEEK_OFF', 'LEAVE'];
+
+const attSelect   = document.getElementById('attendanceTypeSelect');
+const timeSection = document.getElementById('timeSection');
+const attBtns     = document.querySelectorAll('.att-btn');
+
+function applyType(val) {
+    attSelect.value = val;
+    attBtns.forEach(btn => {
+        const colour = btn.className.match(/btn-(?:outline-)?(\S+)/)?.[1] || '';
+        if (btn.dataset.val === val) {
+            btn.classList.remove('btn-outline-' + colour);
+            btn.classList.add('btn-' + colour);
+        } else {
+            btn.classList.remove('btn-' + colour);
+            btn.classList.add('btn-outline-' + colour);
+        }
+    });
+    timeSection.style.display = NO_TIME_TYPES.includes(val) ? 'none' : '';
+}
+
+attBtns.forEach(btn => btn.addEventListener('click', () => applyType(btn.dataset.val)));
+attSelect.addEventListener('change', () => applyType(attSelect.value));
+
+document.getElementById('markModal').addEventListener('show.bs.modal', function(e) {
+    const btn = e.relatedTarget;
+    document.getElementById('modalEmpId').value          = btn.dataset.empid;
+    document.getElementById('modalEmpName').textContent  = btn.dataset.empname;
+    document.getElementById('modalInTime').value         = btn.dataset.intime  || '09:00';
+    document.getElementById('modalOutTime').value        = btn.dataset.outtime || '18:00';
+    document.getElementById('modalRemarks').value        = btn.dataset.remarks || '';
+
+    const current = btn.dataset.current || '';
+    if (current) {
+        applyType(current);
+    } else {
+        attSelect.value = '';
+        timeSection.style.display = '';
+        attBtns.forEach(btn2 => {
+            const colour = btn2.className.match(/btn-(?:outline-)?(\S+)/)?.[1] || '';
+            btn2.classList.remove('btn-' + colour);
+            btn2.classList.add('btn-outline-' + colour);
+        });
+    }
+});
+</script>
+</th:block>
+</html>

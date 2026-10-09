@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'utility-bills', 'Utility Bill Reminders')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="fw-bold mb-1">Utility Bill Reminders</h5>
+        <p class="text-muted small mb-0">Track and manage your utility bills and due dates.</p>
+    </div>
+    <a th:href="@{/utility-bills/new}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Bill / Reminder
+    </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm text-center py-3" style="background:#fff1f1;">
+            <div class="fs-3 fw-bold text-danger" th:text="${#lists.size(overdue)}">0</div>
+            <div class="text-muted small mt-1">
+                <i class="fas fa-exclamation-circle me-1 text-danger"></i>Overdue Bills
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm text-center py-3" style="background:#fffbea;">
+            <div class="fs-3 fw-bold text-warning" th:text="${#lists.size(upcoming)}">0</div>
+            <div class="text-muted small mt-1">
+                <i class="fas fa-clock me-1 text-warning"></i>Due in Next 7 Days
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bills Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Bill Name</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Recurrence</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b,i : ${bills.content}">
+                        <td class="text-muted small" th:text="${currentPage * 20 + i.index + 1}"></td>
+                        <td class="fw-semibold" th:text="${b.billName}"></td>
+                        <td>
+                            <span class="badge bg-info text-dark" th:text="${b.category.categoryName}"></span>
+                        </td>
+                        <td class="fw-semibold">
+                            ₹<span th:text="${#numbers.formatDecimal(b.amount, 0, 'COMMA', 0, 'POINT')}"></span>
+                        </td>
+                        <td th:text="${#temporals.format(b.dueDate, 'dd-MM-yyyy')}"
+                            th:class="${b.status.name() == 'OVERDUE' or
+                                       (b.status.name() == 'PENDING' and
+                                        b.dueDate.isBefore(#temporals.createNow().toLocalDate()))
+                                       ? 'text-danger fw-bold' : ''}">
+                        </td>
+                        <td th:text="${b.recurrenceType}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${b.status.name() == 'PAID'
+                                                   ? 'bg-success'
+                                                   : (b.dueDate.isBefore(#temporals.createNow().toLocalDate())
+                                                      ? 'bg-danger'
+                                                      : 'bg-warning text-dark')}"
+                                  th:text="${b.status}">
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <!-- Edit -->
+                                <a th:href="@{/utility-bills/{id}/edit(id=${b.id})}"
+                                   class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <!-- Record Payment -->
+                                <form th:if="${b.status.name() != 'PAID'}"
+                                      th:action="@{/utility-bills/{id}/mark-paid(id=${b.id})}"
+                                      method="post" class="d-flex gap-1">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <select name="paymentMode" class="form-select form-select-sm"
+                                            style="width:auto;" required>
+                                        <option value="">Mode</option>
+                                        <option th:each="mode : ${paymentModes}"
+                                                th:value="${mode.name()}"
+                                                th:text="${mode.displayName}">Mode</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check me-1"></i>Mark Paid
+                                    </button>
+                                </form>
+
+                                <!-- Delete -->
+                                <form th:action="@{/utility-bills/{id}/delete(id=${b.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Delete this bill?')">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${bills.empty}">
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fas fa-file-invoice fa-3x mb-3 opacity-25 d-block"></i>
+                            No utility bills found. Click <strong>Add Bill / Reminder</strong> to get started.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</th:block>
+</html>

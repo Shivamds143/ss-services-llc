@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'attendance', 'Attendance Report')}">
+<th:block th:fragment="content">
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="fw-bold mb-1">Attendance Report</h5>
+        <p class="text-muted small mb-0" th:text="${employee.employeeName + ' – ' + employee.employeeId}"></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a th:href="@{/reports/attendance/excel(employeeId=${employee.id},month=${month},year=${year})}"
+           class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i>Export Excel
+        </a>
+        <a th:href="@{/attendance}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+    </div>
+</div>
+
+<!-- Month/Year filter -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form th:action="@{/attendance/employee/{id}(id=${employee.id})}" method="get" class="d-flex gap-2 align-items-center">
+            <select name="month" class="form-select form-select-sm" style="width:130px;">
+                <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}"
+                        th:text="${#dates.format(#dates.create(2024,m,1),'MMMM')}"
+                        th:selected="${m == month}"></option>
+            </select>
+            <input type="number" name="year" class="form-control form-control-sm"
+                   th:value="${year}" min="2020" max="2030" style="width:90px;"/>
+            <button class="btn btn-primary btn-sm">View</button>
+        </form>
+    </div>
+</div>
+
+<!-- Summary cards -->
+<div class="row g-3 mb-3">
+    <div th:each="s : ${summary}" class="col-md-2 col-4">
+        <div class="card border-0 shadow-sm text-center py-2">
+            <div class="fw-bold fs-4" th:text="${s[1]}">0</div>
+            <div class="text-muted" style="font-size:11px;" th:text="${s[0].name().replace('_',' ')}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Records table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" style="font-size:13px;">
+                <thead class="table-dark">
+                    <tr><th>Date</th><th>Day</th><th>Type</th><th>In Time</th><th>Out Time</th><th>Hours</th><th>Remarks</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${records}">
+                        <td th:text="${#temporals.format(r.attendanceDate,'dd-MM-yyyy')}"></td>
+                        <td th:text="${#temporals.format(r.attendanceDate,'EEE')}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${r.attendanceType.name()=='PRESENT'} ? 'bg-success' :
+                                                  (${r.attendanceType.name()=='ABSENT'} ? 'bg-danger' :
+                                                  (${r.attendanceType.name()=='HALF_DAY'} ? 'bg-warning text-dark' :
+                                                  (${r.attendanceType.name()=='HOLIDAY'} ? 'bg-info' : 'bg-secondary')))"
+                                  th:text="${r.attendanceType.name().replace('_',' ')}"></span>
+                        </td>
+                        <td th:text="${r.inTime ?: '-'}"></td>
+                        <td th:text="${r.outTime ?: '-'}"></td>
+                        <td th:text="${r.workingHours ?: '-'}"></td>
+                        <td th:text="${r.remarks ?: '-'}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(records)}">
+                        <td colspan="7" class="text-center py-4 text-muted">No attendance records found.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</th:block>
+</html>

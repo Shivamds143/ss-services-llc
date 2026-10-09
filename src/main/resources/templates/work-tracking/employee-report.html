@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'work-tracking', 'Employee Report')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="fw-bold" th:text="${employee.employeeName + ' — Work Report'}"></h5>
+        <span class="badge bg-secondary" th:text="${employee.employeeId}"></span>
+        <span class="text-muted small ms-2" th:text="${employee.designation ?: ''}"></span>
+    </div>
+    <div class="d-flex gap-2">
+        <form th:action="@{/work-tracking/employee/{id}(id=${employee.id})}" method="get" class="d-flex gap-2">
+            <select name="month" class="form-select form-select-sm" style="width:120px;">
+                <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}"
+                        th:text="${#temporals.format(#temporals.create(2000,m,1),'MMMM')}"
+                        th:selected="${m == month}"></option>
+            </select>
+            <input type="number" name="year" class="form-control form-control-sm" th:value="${year}" style="width:90px;" min="2020"/>
+            <button class="btn btn-primary btn-sm">Go</button>
+        </form>
+        <a th:href="@{/work-tracking}" class="btn btn-outline-secondary btn-sm">← Back</a>
+    </div>
+</div>
+
+<!-- Monthly Totals -->
+<div class="row g-3 mb-4" th:if="${monthTotals != null}">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3 border-start border-4 border-primary">
+            <div class="fs-2 fw-bold text-primary" th:text="${monthTotals[0]}">0</div>
+            <div class="text-muted small">Total Leads</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3 border-start border-4 border-warning">
+            <div class="fs-2 fw-bold text-warning" th:text="${monthTotals[1]}">0</div>
+            <div class="text-muted small">Total Calls</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3 border-start border-4 border-success">
+            <div class="fs-2 fw-bold text-success" th:text="${monthTotals[2]}">0</div>
+            <div class="text-muted small">Connected Calls</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3 border-start border-4 border-info">
+            <div th:with="rate=${monthTotals[1] != null and monthTotals[1] != 0 ? #numbers.formatDecimal(monthTotals[2] * 100.0 / monthTotals[1],1,'COMMA',0,'POINT') : 0}">
+                <div class="fs-2 fw-bold text-info" th:text="${rate + '%'}">0%</div>
+                <div class="text-muted small">Connection Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Target Section -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-bullseye me-2 text-danger"></i>Monthly Target</h6>
+        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#targetModal">
+            <i class="fas fa-edit me-1"></i>Set Target
+        </button>
+    </div>
+    <div class="card-body" th:if="${target != null}">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">Leads</span>
+                    <span class="text-muted small" th:text="${target.leadsAchieved + ' / ' + target.leadsTarget}"></span>
+                </div>
+                <div class="progress mb-1" style="height:14px;">
+                    <div class="progress-bar bg-primary" th:style="'width:' + ${target.leadsPercent()} + '%'"
+                         th:text="${target.leadsPercent() + '%'}"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">Calls</span>
+                    <span class="text-muted small" th:text="${target.callsAchieved + ' / ' + target.callsTarget}"></span>
+                </div>
+                <div class="progress mb-1" style="height:14px;">
+                    <div class="progress-bar bg-warning" th:style="'width:' + ${target.callsPercent()} + '%'"
+                         th:text="${target.callsPercent() + '%'}"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">Conversions</span>
+                    <span class="text-muted small" th:text="${target.conversionAchieved + ' / ' + target.conversionTarget}"></span>
+                </div>
+                <div class="progress mb-1" style="height:14px;">
+                    <div class="progress-bar bg-success" th:style="'width:' + ${target.conversionPercent()} + '%'"
+                         th:text="${target.conversionPercent() + '%'}"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Update Achieved Form -->
+        <form th:action="@{/work-tracking/target/update-achieved}" method="post" class="row g-2 mt-3">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="targetId" th:value="${target.id}"/>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Leads Achieved</label>
+                <input type="number" name="leadsAchieved" class="form-control form-control-sm" th:value="${target.leadsAchieved}" min="0"/>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Calls Achieved</label>
+                <input type="number" name="callsAchieved" class="form-control form-control-sm" th:value="${target.callsAchieved}" min="0"/>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Conversions</label>
+                <input type="number" name="conversionAchieved" class="form-control form-control-sm" th:value="${target.conversionAchieved}" min="0"/>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Revenue Achieved (₹)</label>
+                <input type="number" name="revenueAchieved" class="form-control form-control-sm" th:value="${target.revenueAchieved}" min="0"/>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-sm btn-success w-100">Update</button>
+            </div>
+        </form>
+    </div>
+    <div class="card-body text-muted" th:unless="${target != null}">
+        No target set for this month. Click "Set Target" to add one.
+    </div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="card border-0 shadow-sm mb-4" th:if="${!#lists.isEmpty(attendanceSummary)}">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-clipboard-check me-2 text-info"></i>Attendance Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+            <div th:each="s : ${attendanceSummary}"
+                 class="card border-0 bg-light text-center px-4 py-2" style="min-width:110px;">
+                <div class="fw-bold fs-4" th:text="${s[1]}">0</div>
+                <div class="text-muted small" th:text="${s[0].name().replace('_',' ')}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Work Log Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-calendar-alt me-2 text-secondary"></i>Daily Work Log</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr><th>Date</th><th>Leads</th><th>Total Calls</th><th>Connected</th><th>Not Answered</th><th>Busy</th><th>Rate%</th><th>Call Notes</th><th>Summary</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="w : ${workLog}">
+                        <td class="fw-semibold" th:text="${#temporals.format(w.workDate,'dd-MM-yyyy')}"></td>
+                        <td><span class="badge bg-primary" th:text="${w.dailyLeads}"></span></td>
+                        <td th:text="${w.totalCalls}"></td>
+                        <td class="text-success fw-semibold" th:text="${w.connectedCalls}"></td>
+                        <td th:text="${w.notAnswered}"></td>
+                        <td th:text="${w.busyCalls}"></td>
+                        <td>
+                            <span class="badge" th:text="${w.getConnectionRate() + '%'}"
+                                  th:classappend="${w.getConnectionRate() >= 60} ? 'bg-success' :
+                                                  (${w.getConnectionRate() >= 40} ? 'bg-warning text-dark' : 'bg-danger')">
+                            </span>
+                        </td>
+                        <td class="small" th:text="${#strings.abbreviate(w.callNotes ?: '-', 40)}"></td>
+                        <td class="small" th:text="${#strings.abbreviate(w.workSummary ?: '-', 50)}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(workLog)}">
+                        <td colspan="9" class="text-center py-4 text-muted">No records for this month.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Set Target Modal -->
+<div class="modal fade" id="targetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-bullseye me-2"></i>Set Monthly Target</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/work-tracking/target/save}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="employeeId" th:value="${employee.id}"/>
+                <input type="hidden" name="targetMonth" th:value="${month}"/>
+                <input type="hidden" name="targetYear"  th:value="${year}"/>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Leads Target</label>
+                            <input type="number" name="leadsTarget" class="form-control" min="0"
+                                   th:value="${target != null ? target.leadsTarget : 0}"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Calls Target</label>
+                            <input type="number" name="callsTarget" class="form-control" min="0"
+                                   th:value="${target != null ? target.callsTarget : 0}"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Conversion Target</label>
+                            <input type="number" name="conversionTarget" class="form-control" min="0"
+                                   th:value="${target != null ? target.conversionTarget : 0}"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Revenue Target (₹)</label>
+                            <input type="number" name="revenueTarget" class="form-control" min="0"
+                                   th:value="${target != null ? target.revenueTarget : 0}"/>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2"
+                                      th:text="${target != null ? target.remarks : ''}"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-save me-2"></i>Save Target</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</th:block>
+</html>

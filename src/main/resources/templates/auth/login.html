@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login | Financial CRM</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.2/css/all.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <style>
+        body {
+            background:
+                        linear-gradient(135deg, rgba(10, 30, 23, 0.84), rgba(23, 81, 62, 0.7), rgba(89, 201, 165, 0.52)),
+                        url('/images/login-bg.jpg') center center / cover no-repeat fixed;
+            min-height: 100vh;
+        }
+        .auth-wrap {
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        .login-card {
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 32px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 28px 70px rgba(0,0,0,0.28);
+        }
+        .login-showcase {
+            height: 100%;
+            padding: 2.5rem;
+            color: #fff;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 30%),
+                linear-gradient(160deg, rgba(12, 35, 28, 0.94), rgba(27, 102, 76, 0.88));
+        }
+        .brand-icon {
+            width: 72px;
+            height: 72px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(135deg, #59c9a5, #84e1bc);
+            color: #123327;
+            box-shadow: 0 18px 36px rgba(89, 201, 165, 0.24);
+        }
+        .showcase-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.16);
+        }
+        .showcase-panel {
+            margin-top: 2rem;
+            padding: 1.15rem 1.2rem;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .showcase-kpi {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .showcase-kpi:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .login-form {
+            padding: 2.4rem;
+        }
+        .login-form h4 {
+            color: #13241d;
+        }
+        .login-form .input-group-text {
+            border-radius: 16px 0 0 16px;
+        }
+        .login-form .form-control {
+            border-left: 0;
+        }
+        .login-form .input-group .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .field-note {
+            margin-top: 0.45rem;
+            font-size: 0.78rem;
+            color: #62746d;
+        }
+        .remember-shell {
+            border: 1px solid #d8ece4;
+            border-radius: 18px;
+            padding: 0.9rem 1rem;
+            background: rgba(244, 251, 248, 0.85);
+        }
+        .remember-shell .form-check-input {
+            width: 2.6rem;
+            height: 1.35rem;
+            cursor: pointer;
+            border-color: #9ecfbb;
+        }
+        .remember-shell .form-check-input:checked {
+            background-color: #238b69;
+            border-color: #238b69;
+        }
+        .remember-shell .form-check-label {
+            cursor: pointer;
+        }
+        .invalid-feedback {
+            font-size: 0.8rem;
+        }
+        .form-field-invalid .invalid-feedback {
+            display: block;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #238b69, #59c9a5);
+            border: none;
+            padding: 0.95rem 1.1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            box-shadow: 0 18px 30px rgba(89, 201, 165, 0.22);
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, #1d7258, #45ba95);
+            transform: translateY(-1px);
+        }
+        .small-muted {
+            color: #62746d;
+        }
+        @media (max-width: 991px) {
+            .login-showcase {
+                padding: 2rem;
+            }
+            .login-form {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container auth-wrap d-flex align-items-center">
+    <div class="row justify-content-center w-100">
+        <div class="col-12 col-xl-11">
+            <div class="card login-card">
+                <div class="row g-0">
+                    <div class="col-lg-6 d-none d-lg-block">
+                        <div class="login-showcase">
+                            <span class="showcase-chip mb-3">
+                                <i class="fas fa-seedling"></i>SS Services LLP
+                            </span>
+                            <div class="brand-icon">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                            <h1 class="fw-bold display-6 mb-3">We care we secure & makes smile per life</h1>
+                            <p class="mb-0 opacity-75">A centralized workspace for managing clients, leads, appointments, follow-ups, financial services, and team activities — all in one secure platform.</p>
+
+                            <div class="showcase-panel">
+                                <div class="showcase-kpi">
+                                    <div>
+                                        <div class="small text-white-50">Client Management</div>
+                                        <div class="fw-semibold">Centralize client information and interactions.</div>
+                                    </div>
+                                    <i class="fas fa-palette"></i>
+                                </div>
+                                <div class="showcase-kpi">
+                                    <div>
+                                        <div class="small text-white-50">Business Operations</div>
+                                        <div class="fw-semibold">Manage leads, appointments, follow-ups, and daily activities efficiently.</div>
+                                    </div>
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div class="showcase-kpi">
+                                    <div>
+                                        <div class="small text-white-50">Insights & Reporting</div>
+                                        <div class="fw-semibold">Monitor business performance with clear, actionable insights.</div>
+                                    </div>
+                                    <i class="fas fa-arrow-trend-up"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="login-form">
+                            <div class="d-lg-none text-center mb-4">
+                                <div class="brand-icon mx-auto">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                            </div>
+                            <p class="page-eyebrow mb-3">Welcome Back</p>
+                            <h4 class="fw-bold mb-2">Sign in to Financial CRM</h4>
+                            <p class="small-muted mb-4">Use your credentials to access the premium redesigned workspace.</p>
+
+            <div th:if="${errorMsg}" class="alert alert-danger d-flex align-items-center py-2 mb-3">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMsg}"></span>
+            </div>
+            <div th:if="${successMsg}" class="alert alert-success d-flex align-items-center py-2 mb-3">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMsg}"></span>
+            </div>
+
+            <form th:action="@{/auth/login}" method="post" autocomplete="off" id="loginForm" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text text-muted"><i class="fas fa-user fa-sm"></i></span>
+                        <input type="text" name="username" id="usernameInput" class="form-control"
+                               placeholder="Enter username" required autofocus/>
+                    </div>
+                    <div class="invalid-feedback">Please enter your username.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text text-muted"><i class="fas fa-lock fa-sm"></i></span>
+                        <input type="password" name="password" id="passwordInput" class="form-control"
+                               placeholder="Enter password" required/>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePwd">
+                            <i class="fas fa-eye fa-sm" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <div class="invalid-feedback">Please enter your password.</div>
+                    <div class="field-note">Use your assigned CRM account credentials.</div>
+                </div>
+
+                <div class="remember-shell d-flex justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <div class="fw-semibold">Remember me</div>
+                        <div class="small-muted small">Keep this device signed in for up to 14 days.</div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="rememberMe" name="remember-me" value="true"/>
+                        <label class="form-check-label visually-hidden" for="rememberMe">Remember me</label>
+                    </div>
+                    <a th:href="@{/auth/forgot-password}" class="text-decoration-none small">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-login btn-primary w-100 rounded-3 text-white">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </button>
+            </form>
+                        </div>
+                        <div class="card-footer text-center py-3 bg-transparent border-top-0">
+                            <small class="small-muted">© 2026 Financial CRM System. All rights reserved.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+<script>
+    const loginForm = document.getElementById('loginForm');
+    document.getElementById('togglePwd').addEventListener('click', function() {
+        const inp = document.getElementById('passwordInput');
+        const eye = document.getElementById('eyeIcon');
+        if (inp.type === 'password') { inp.type = 'text'; eye.classList.replace('fa-eye','fa-eye-slash'); }
+        else { inp.type = 'password'; eye.classList.replace('fa-eye-slash','fa-eye'); }
+    });
+
+    if (loginForm) {
+        const requiredFields = loginForm.querySelectorAll('input[required]');
+
+        requiredFields.forEach(function (field) {
+            field.addEventListener('input', function () {
+                const invalid = !field.value.trim();
+                field.classList.toggle('is-invalid', invalid);
+                const wrapper = field.closest('.mb-3, .mb-4');
+                if (wrapper) {
+                    wrapper.classList.toggle('form-field-invalid', invalid);
+                }
+            });
+        });
+
+        loginForm.addEventListener('submit', function (event) {
+            requiredFields.forEach(function (field) {
+                const invalid = !field.value.trim();
+                field.classList.toggle('is-invalid', invalid);
+                const wrapper = field.closest('.mb-3, .mb-4');
+                if (wrapper) {
+                    wrapper.classList.toggle('form-field-invalid', invalid);
+                }
+            });
+            if (!loginForm.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            loginForm.classList.add('was-validated');
+        });
+    }
+</script>
+</body>
+</html>

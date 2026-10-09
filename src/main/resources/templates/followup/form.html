@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'followups', 'Add Follow-up')}">
+<th:block th:fragment="content">
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <h5 class="fw-bold" th:text="${followup.id == null ? 'Add Follow-up' : 'Edit Follow-up'}">Follow-up</h5>
+    <a th:href="@{/inquiries/{id}(id=${inquiry.id})}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Inquiry
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:750px;">
+    <div class="card-header bg-primary text-white py-3">
+        <h6 class="mb-0">
+            <i class="fas fa-phone-alt me-2"></i>Follow-up for
+            <strong th:text="${inquiry.customer != null ? inquiry.customer.customerName : 'Unknown Customer'}"></strong>
+        </h6>
+    </div>
+    <div class="card-body p-4">
+        <div class="alert alert-info py-2 mb-3">
+            <strong>Inquiry Type:</strong>
+            <span th:text="${inquiry.inquiryType != null ? inquiry.inquiryType.typeName : '-'}"></span> |
+            <strong>Status:</strong>
+            <span th:text="${inquiry.status}"></span>
+        </div>
+
+        <form th:action="${followup.id == null ? '/followups/save' : '/followups/' + followup.id + '/save'}"
+              method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="inquiryId" th:value="${inquiry.id}"/>
+            <input type="hidden" name="customerId"
+                   th:value="${inquiry.customer != null ? inquiry.customer.id : ''}"/>
+
+            <!-- ══ SECTION 1: FOLLOW-UP DATE & TIME ══════════════ -->
+            <div class="bg-light rounded p-3 mb-3">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-calendar-check me-2"></i>1. Follow-up Date</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Follow-up Date <span class="text-danger">*</span></label>
+                        <input type="date" name="followupDate" class="form-control" required
+                               th:value="${followup.followupDate != null ? followup.followupDate : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Follow-up Time</label>
+                        <input type="time" name="followupTimeStr" class="form-control"
+                               th:value="${followup.followupTime}"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECTION 2: CALL REMINDER ══════════════════════ -->
+            <div class="bg-light rounded p-3 mb-3">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-phone me-2"></i>2. Call Reminder</h6>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="callReminder"
+                                   value="true" id="callR"
+                                   th:checked="${followup.callReminder}"
+                                   onchange="toggleSection('callReminderTime', this.checked)"/>
+                            <label class="form-check-label fw-semibold" for="callR">
+                                <i class="fas fa-phone me-1 text-primary"></i>Enable Call Reminder
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4" id="callReminderTime"
+                         th:style="${followup.callReminder} ? '' : 'display:none'">
+                        <label class="form-label fw-semibold">Reminder Time</label>
+                        <input type="time" name="callReminderTimeStr" class="form-control"
+                               th:value="${followup.callReminderTime}"/>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-primary py-1 px-2 mb-0 small" th:if="${followup.callReminderSent}">
+                            <i class="fas fa-check-circle me-1"></i>Call reminder was sent
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECTION 3: WHATSAPP REMINDER ══════════════════ -->
+            <div class="bg-light rounded p-3 mb-3">
+                <h6 class="fw-bold text-success mb-3"><i class="fab fa-whatsapp me-2"></i>3. WhatsApp Reminder</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="whatsappReminder"
+                                   value="true" id="waR"
+                                   th:checked="${followup.whatsappReminder}"
+                                   onchange="toggleSection('waSection', this.checked)"/>
+                            <label class="form-check-label fw-semibold" for="waR">
+                                <i class="fab fa-whatsapp me-1 text-success"></i>Enable WhatsApp Reminder
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4" id="waSection"
+                         th:style="${followup.whatsappReminder} ? '' : 'display:none'">
+                        <label class="form-label fw-semibold">Reminder Time</label>
+                        <input type="time" name="whatsappReminderTimeStr" class="form-control"
+                               th:value="${followup.whatsappReminderTime}"/>
+                    </div>
+                </div>
+                <div class="row g-3 mt-1" id="waMessageSection"
+                     th:style="${followup.whatsappReminder} ? '' : 'display:none'">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">WhatsApp Message Template
+                            <span class="text-muted small">(optional)</span></label>
+                        <textarea name="whatsappMessageTemplate" class="form-control" rows="2"
+                                  placeholder="Hi {name}, this is a reminder for your follow-up today..."
+                                  th:text="${followup.whatsappMessageTemplate}"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECTION 4: NOTES ═══════════════════════════════ -->
+            <div class="bg-light rounded p-3 mb-3">
+                <h6 class="fw-bold text-warning mb-3"><i class="fas fa-sticky-note me-2"></i>4. Notes Section</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Discussion Notes
+                            <span class="text-muted small">(visible to all)</span></label>
+                        <textarea name="followupNotes" class="form-control" rows="3"
+                                  placeholder="What was discussed with the customer?"
+                                  th:text="${followup.followupNotes}"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Internal Notes
+                            <span class="text-muted small">(staff only)</span></label>
+                        <textarea name="internalNotes" class="form-control" rows="2"
+                                  placeholder="Internal observations..."
+                                  th:text="${followup.internalNotes}"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Customer Feedback</label>
+                        <textarea name="customerFeedback" class="form-control" rows="2"
+                                  placeholder="Customer's response or feedback..."
+                                  th:text="${followup.customerFeedback}"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Outcome</label>
+                        <select name="outcome" class="form-select">
+                            <option th:each="o : ${outcomes}"
+                                    th:value="${o}"
+                                    th:text="${o}"
+                                    th:selected="${followup.outcome == o}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECTION 5: AUTO REMINDER & NEXT FOLLOW-UP ═════ -->
+            <div class="bg-light rounded p-3 mb-3">
+                <h6 class="fw-bold text-danger mb-3"><i class="fas fa-bell me-2"></i>5. Auto Reminder &amp; Next Follow-up</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="autoReminderEnabled"
+                                   value="true" id="autoR"
+                                   th:checked="${followup.autoReminderEnabled != false}"/>
+                            <label class="form-check-label fw-semibold" for="autoR">
+                                <i class="fas fa-robot me-1 text-danger"></i>Auto Reminder Enabled
+                            </label>
+                        </div>
+                        <label class="form-label fw-semibold mt-2">Remind Me (Days Before)</label>
+                        <select name="reminderDaysBefore" class="form-select">
+                            <option value="0" th:selected="${followup.reminderDaysBefore == 0}">Same Day (0 days)</option>
+                            <option value="1" th:selected="${followup.reminderDaysBefore == 1}">1 Day Before</option>
+                            <option value="2" th:selected="${followup.reminderDaysBefore == 2}">2 Days Before</option>
+                            <option value="3" th:selected="${followup.reminderDaysBefore == 3}">3 Days Before</option>
+                            <option value="7" th:selected="${followup.reminderDaysBefore == 7}">1 Week Before</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Next Follow-up Date</label>
+                        <input type="date" name="nextFollowupDate" class="form-control"
+                               th:value="${followup.nextFollowupDate}"/>
+                        <label class="form-label fw-semibold mt-2">Next Follow-up Time</label>
+                        <input type="time" name="nextFollowupTimeStr" class="form-control"
+                               th:value="${followup.nextFollowupTime}"/>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Reason for Next Follow-up</label>
+                        <input type="text" name="nextFollowupReason" class="form-control"
+                               placeholder="e.g. Send documents, Price negotiation, Final decision..."
+                               th:value="${followup.nextFollowupReason}"/>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4"/>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-save me-2"></i>Save Follow-up
+                </button>
+                <a th:href="@{/inquiries/{id}(id=${inquiry.id})}" class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleSection(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+    if (id === 'waSection') {
+        const waMsg = document.getElementById('waMessageSection');
+        if (waMsg) waMsg.style.display = show ? '' : 'none';
+    }
+}
+</script>
+</th:block>
+</html>

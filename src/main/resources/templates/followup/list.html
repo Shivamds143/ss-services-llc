@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'followups', 'Follow-ups')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold">CRM Follow-up Management</h5>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Follow-ups</li>
+        </ol></nav>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge bg-danger fs-6" th:if="${todayCount > 0}" th:text="${todayCount} + ' Pending Today'"></span>
+        <!-- Manual trigger for auto reminders -->
+        <form th:action="@{/followups/send-reminders}" method="post" class="d-inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Send Auto Reminders Now">
+                <i class="fas fa-bell me-1"></i>Send Reminders
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-warning" th:text="${todayCount}">0</div>
+            <div class="text-muted small">Pending Today</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-danger" th:text="${overdueFollowups.size()}">0</div>
+            <div class="text-muted small">Overdue</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-info" th:text="${upcomingFollowups.size()}">0</div>
+            <div class="text-muted small">Upcoming (7 days)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-success" th:text="${currentDate}">-</div>
+            <div class="text-muted small">Today's Date</div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Follow-ups -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-warning bg-opacity-10 py-3">
+        <h6 class="mb-0 fw-bold text-warning"><i class="fas fa-bell me-2"></i>Today's Follow-ups
+            <span class="badge bg-warning text-dark ms-2" th:text="${todayFollowups.size()}"></span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Customer</th>
+                        <th>Mobile</th>
+                        <th>Time</th>
+                        <th>Reminders</th>
+                        <th>Notes</th>
+                        <th>Next F/U</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${todayFollowups}">
+                        <td>
+                            <div class="fw-semibold" th:text="${f.customer.customerName}"></div>
+                            <div class="text-muted small" th:text="${f.inquiry.inquiryType.typeName}"></div>
+                        </td>
+                        <td>
+                            <a th:href="'tel:' + ${f.customer.mobileNumber}" class="text-dark text-decoration-none"
+                               th:text="${f.customer.mobileNumber}"></a>
+                        </td>
+                        <td th:text="${f.followupTime ?: '-'}"></td>
+                        <td>
+                            <span th:if="${f.callReminder}" class="badge bg-primary me-1" title="Call Reminder">
+                                <i class="fas fa-phone"></i>
+                                <span th:if="${f.callReminderTime != null}" th:text="${' ' + f.callReminderTime}"></span>
+                            </span>
+                            <span th:if="${f.whatsappReminder}" class="badge bg-success me-1" title="WhatsApp Reminder">
+                                <i class="fab fa-whatsapp"></i>
+                                <span th:if="${f.whatsappReminderTime != null}" th:text="${' ' + f.whatsappReminderTime}"></span>
+                            </span>
+                            <span th:if="${f.autoReminderEnabled}" class="badge bg-secondary" title="Auto Reminder ON">
+                                <i class="fas fa-robot"></i>
+                            </span>
+                        </td>
+                        <td class="small">
+                            <div th:if="${f.followupNotes}" class="text-truncate" style="max-width:150px;"
+                                 th:text="${f.followupNotes}" th:title="${f.followupNotes}"></div>
+                            <div th:if="${f.internalNotes}" class="text-muted" style="font-size:0.75rem;">
+                                <i class="fas fa-lock me-1"></i><span th:text="${#strings.abbreviate(f.internalNotes,40)}"></span>
+                            </div>
+                        </td>
+                        <td>
+                            <span th:if="${f.nextFollowupDate != null}" class="badge bg-info text-dark"
+                                  th:text="${#temporals.format(f.nextFollowupDate,'dd-MM-yyyy')}"></span>
+                            <div th:if="${f.nextFollowupReason}" class="text-muted small"
+                                 th:text="${#strings.abbreviate(f.nextFollowupReason,25)}"></div>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a th:href="'https://wa.me/91' + ${f.customer.mobileNumber}" target="_blank"
+                                   class="btn btn-sm btn-success" title="WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                                <a th:href="'tel:' + ${f.customer.mobileNumber}"
+                                   class="btn btn-sm btn-primary" title="Call">
+                                    <i class="fas fa-phone"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning"
+                                        data-bs-toggle="modal" data-bs-target="#completeModal"
+                                        th:data-id="${f.id}"
+                                        th:if="${f.status.name()=='PENDING'}">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(todayFollowups)}">
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2 d-block"></i>
+                            No pending follow-ups for today!
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Follow-ups (next 7 days) -->
+<div class="card border-0 shadow-sm mb-4" th:if="${!#lists.isEmpty(upcomingFollowups)}">
+    <div class="card-header bg-info bg-opacity-10 py-3">
+        <h6 class="mb-0 fw-bold text-info"><i class="fas fa-calendar-alt me-2"></i>Upcoming (Next 7 Days)
+            <span class="badge bg-info text-dark ms-2" th:text="${upcomingFollowups.size()}"></span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Customer</th><th>Mobile</th><th>Date</th><th>Time</th><th>Reminders</th><th>Notes</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${upcomingFollowups}">
+                        <td>
+                            <div class="fw-semibold" th:text="${f.customer.customerName}"></div>
+                            <div class="text-muted small" th:text="${f.inquiry.inquiryType.typeName}"></div>
+                        </td>
+                        <td th:text="${f.customer.mobileNumber}"></td>
+                        <td><span class="badge bg-info text-dark"
+                                  th:text="${#temporals.format(f.followupDate,'dd-MM-yyyy')}"></span></td>
+                        <td th:text="${f.followupTime ?: '-'}"></td>
+                        <td>
+                            <span th:if="${f.callReminder}" class="badge bg-primary me-1"><i class="fas fa-phone"></i></span>
+                            <span th:if="${f.whatsappReminder}" class="badge bg-success me-1"><i class="fab fa-whatsapp"></i></span>
+                            <span th:if="${f.autoReminderEnabled}" class="badge bg-secondary"><i class="fas fa-robot"></i></span>
+                        </td>
+                        <td class="small" th:text="${#strings.abbreviate(f.followupNotes ?: '-', 50)}"></td>
+                        <td>
+                            <a th:href="@{/followups/{id}/edit(id=${f.id})}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Overdue Follow-ups -->
+<div class="card border-0 shadow-sm mb-4" th:if="${!#lists.isEmpty(overdueFollowups)}">
+    <div class="card-header bg-danger bg-opacity-10 py-3">
+        <h6 class="mb-0 fw-bold text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Overdue Follow-ups
+            <span class="badge bg-danger ms-2" th:text="${overdueFollowups.size()}"></span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Customer</th><th>Mobile</th><th>Due Date</th><th>Notes</th><th>Next F/U</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${overdueFollowups}" class="table-danger">
+                        <td class="fw-semibold" th:text="${f.customer.customerName}"></td>
+                        <td th:text="${f.customer.mobileNumber}"></td>
+                        <td><span class="badge bg-danger"
+                                  th:text="${#temporals.format(f.followupDate,'dd-MM-yyyy')}"></span></td>
+                        <td class="small">
+                            <div th:text="${#strings.abbreviate(f.followupNotes ?: '-', 40)}"></div>
+                            <div th:if="${f.customerFeedback}" class="text-muted" style="font-size:0.75rem;"
+                                 th:text="'FB: ' + ${#strings.abbreviate(f.customerFeedback,30)}"></div>
+                        </td>
+                        <td>
+                            <span th:if="${f.nextFollowupDate != null}" class="badge bg-warning text-dark"
+                                  th:text="${#temporals.format(f.nextFollowupDate,'dd-MM-yyyy')}"></span>
+                        </td>
+                        <td>
+                            <a th:href="'https://wa.me/91' + ${f.customer.mobileNumber}" target="_blank"
+                               class="btn btn-sm btn-success"><i class="fab fa-whatsapp"></i></a>
+                            <a th:href="@{/followups/{id}/edit(id=${f.id})}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Follow-up Modal (Enhanced) -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Complete Follow-up</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="completeForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="modal-body">
+                    <!-- Notes Section in modal -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold"><i class="fas fa-comments me-1"></i>Discussion Notes <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="3"
+                                  placeholder="What happened on this call?" required></textarea>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold"><i class="fas fa-lock me-1"></i>Internal Notes</label>
+                            <textarea name="internalNotes" class="form-control" rows="2"
+                                      placeholder="Staff-only observations..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold"><i class="fas fa-user me-1"></i>Customer Feedback</label>
+                            <textarea name="customerFeedback" class="form-control" rows="2"
+                                      placeholder="Customer's response..."></textarea>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Outcome</label>
+                            <select name="outcome" class="form-select">
+                                <option value="POSITIVE">✅ Positive</option>
+                                <option value="NEUTRAL" selected>➖ Neutral</option>
+                                <option value="NEGATIVE">❌ Negative</option>
+                                <option value="NO_RESPONSE">📵 No Response</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Next Follow-up Date in modal -->
+                    <hr/>
+                    <h6 class="fw-bold text-primary"><i class="fas fa-calendar-plus me-2"></i>Schedule Next Follow-up</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Next Follow-up Date</label>
+                            <input type="date" name="nextFollowupDate" class="form-control"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Reason</label>
+                            <input type="text" name="nextFollowupReason" class="form-control"
+                                   placeholder="Why follow up again?"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check me-2"></i>Mark Complete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('completeModal').addEventListener('show.bs.modal', function(e) {
+    const id = e.relatedTarget.getAttribute('data-id');
+    document.getElementById('completeForm').action = '/followups/' + id + '/complete';
+});
+</script>
+</th:block>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'inquiries', 'Inquiry Details')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold">Inquiry Details</h5>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a th:href="@{/inquiries}">Inquiries</a></li>
+            <li class="breadcrumb-item active">View</li>
+        </ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a th:href="@{/followups/new(inquiryId=${inquiry.id})}" class="btn btn-success">
+            <i class="fas fa-phone-alt me-2"></i>Add Follow-up
+        </a>
+        <a th:href="@{/income-entries/new(inquiryId=${inquiry.id},customerId=${inquiry.customer.id})}" class="btn btn-info text-white">
+            <i class="fas fa-rupee-sign me-2"></i>Record Income
+        </a>
+        <a th:href="@{/inquiries/{id}/edit(id=${inquiry.id})}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i>Edit
+        </a>
+        <a th:href="@{/inquiries}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Main Details -->
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2 text-primary"></i>Inquiry Information</h6>
+                <div class="d-flex gap-2">
+                    <span class="badge fs-6"
+                          th:classappend="${inquiry.status.name() == 'APPROVED'} ? 'bg-success' :
+                                          (${inquiry.status.name() == 'REJECTED'} ? 'bg-danger' :
+                                          (${inquiry.status.name() == 'NEW'} ? 'bg-info' : 'bg-warning text-dark'))"
+                          th:text="${inquiry.status.name().replace('_',' ')}"></span>
+                    <span class="badge bg-secondary" th:text="${inquiry.priority}"></span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Customer</label>
+                        <div class="fw-semibold">
+                            <a th:href="@{/customers/{id}(id=${inquiry.customer.id})}" class="text-decoration-none"
+                               th:text="${inquiry.customer.customerName}"></a>
+                        </div>
+                        <div class="text-muted small" th:text="${inquiry.customer.mobileNumber}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Inquiry Type</label>
+                        <div class="fw-semibold" th:text="${inquiry.inquiryType.typeName}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Inquiry Date</label>
+                        <div class="fw-semibold" th:text="${#temporals.format(inquiry.inquiryDate,'dd-MM-yyyy')}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Loan Amount</label>
+                        <div class="fw-semibold text-success"
+                             th:text="${inquiry.loanAmount != null ? '₹ ' + #numbers.formatDecimal(inquiry.loanAmount,0,'COMMA',0,'POINT') : '-'}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Bank Name</label>
+                        <div class="fw-semibold" th:text="${inquiry.bankName ?: '-'}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Interest Rate</label>
+                        <div class="fw-semibold" th:text="${inquiry.interestRate != null ? inquiry.interestRate + '%' : '-'}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Tenure</label>
+                        <div class="fw-semibold" th:text="${inquiry.tenureMonths != null ? inquiry.tenureMonths + ' months' : '-'}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">EMI Amount</label>
+                        <div class="fw-semibold"
+                             th:text="${inquiry.emiAmount != null ? '₹ ' + #numbers.formatDecimal(inquiry.emiAmount,0,'COMMA',0,'POINT') : '-'}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Assigned To</label>
+                        <div class="fw-semibold" th:text="${inquiry.assignedTo != null ? inquiry.assignedTo.fullName : 'Unassigned'}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Expected Close Date</label>
+                        <div class="fw-semibold" th:text="${inquiry.expectedCloseDate != null ? #temporals.format(inquiry.expectedCloseDate,'dd-MM-yyyy') : '-'}"></div>
+                    </div>
+                    <div class="col-12" th:if="${inquiry.remarks}">
+                        <label class="text-muted small">Remarks</label>
+                        <div class="fw-semibold" th:text="${inquiry.remarks}"></div>
+                    </div>
+                    <!-- Insurance fields — shown only when present -->
+                    <div class="col-md-6" th:if="${inquiry.insuranceType != null and !#strings.isEmpty(inquiry.insuranceType)}">
+                        <label class="text-muted small"><i class="fas fa-shield-alt me-1"></i>Insurance Type</label>
+                        <div>
+                            <span class="badge"
+                                  style="background:#fff3cd; color:#856404; font-size:13px; font-weight:600; border:1px solid #f0c040; padding:5px 12px;"
+                                  th:text="${inquiry.insuranceType}">
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6" th:if="${inquiry.insuranceSubType != null and !#strings.isEmpty(inquiry.insuranceSubType)}">
+                        <label class="text-muted small"><i class="fas fa-tag me-1"></i>Insurance Sub-Type</label>
+                        <div class="fw-semibold" th:text="${inquiry.insuranceSubType}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Follow-up History -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-history me-2 text-info"></i>Follow-up History</h6>
+                <a th:href="@{/followups/new(inquiryId=${inquiry.id})}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i>Add
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Date</th><th>Notes</th><th>Status</th><th>Outcome</th><th>Next Date</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="f : ${inquiry.followups}">
+                                <td th:text="${#temporals.format(f.followupDate,'dd-MM-yyyy')}"></td>
+                                <td th:text="${#strings.abbreviate(f.followupNotes ?: '-', 60)}"></td>
+                                <td><span class="badge"
+                                         th:classappend="${f.status.name()=='COMPLETED'} ? 'bg-success' : 'bg-warning text-dark'"
+                                         th:text="${f.status}"></span></td>
+                                <td><span class="badge bg-secondary" th:text="${f.outcome}"></span></td>
+                                <td th:text="${f.nextFollowupDate != null ? #temporals.format(f.nextFollowupDate,'dd-MM-yyyy') : '-'}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(inquiry.followups)}">
+                                <td colspan="5" class="text-center text-muted py-3">No follow-ups recorded yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-clock me-2 text-warning"></i>Timeline</h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="d-flex mb-3">
+                        <div class="timeline-dot bg-primary rounded-circle me-3" style="width:10px;height:10px;margin-top:5px;flex-shrink:0;"></div>
+                        <div>
+                            <div class="fw-semibold small">Created</div>
+                            <div class="text-muted small" th:text="${#temporals.format(inquiry.createdAt,'dd-MM-yyyy HH:mm')}"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex mb-3" th:if="${inquiry.actualCloseDate}">
+                        <div class="timeline-dot bg-success rounded-circle me-3" style="width:10px;height:10px;margin-top:5px;flex-shrink:0;"></div>
+                        <div>
+                            <div class="fw-semibold small">Closed</div>
+                            <div class="text-muted small" th:text="${#temporals.format(inquiry.actualCloseDate,'dd-MM-yyyy')}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <a th:href="'https://wa.me/91' + ${inquiry.customer.mobileNumber}" target="_blank"
+                   class="btn btn-success btn-sm">
+                    <i class="fab fa-whatsapp me-2"></i>WhatsApp Customer
+                </a>
+                <a th:href="@{/appointments/new(customerId=${inquiry.customer.id},inquiryId=${inquiry.id})}"
+                   class="btn btn-info btn-sm text-white">
+                    <i class="fas fa-calendar-plus me-2"></i>Schedule Meeting
+                </a>
+                <a th:href="@{/income-entries/new(inquiryId=${inquiry.id},customerId=${inquiry.customer.id})}"
+                   class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-rupee-sign me-2"></i>Record Income
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</th:block>
+</html>

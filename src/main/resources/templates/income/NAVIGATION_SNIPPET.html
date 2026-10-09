@@ -1,0 +1,57 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NAVIGATION ADDITION — insert this block into layout.html
+     REPLACE the existing single <a> for /income with this entire block
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ─── FINANCIAL MANAGEMENT (collapsible group) ─── -->
+<div class="sidebar-divider my-1 mx-3 border-secondary border-top"></div>
+
+<div id="financialMenuGroup">
+
+    <!-- Group Header / Toggle -->
+    <a href="#financialSubmenu"
+       data-bs-toggle="collapse"
+       class="list-group-item list-group-item-action bg-dark text-white sidebar-link d-flex justify-content-between align-items-center"
+       th:classappend="${activeMenu != null and activeMenu.startsWith('income')} ? 'active' : ''">
+        <span><i class="fas fa-rupee-sign me-2 text-success"></i>Financial Management</span>
+        <i class="fas fa-chevron-down small" id="financialChevron"></i>
+    </a>
+
+    <!-- Submenu -->
+    <div id="financialSubmenu"
+         th:classappend="${activeMenu != null and activeMenu.startsWith('income')} ? 'show' : ''"
+         class="collapse">
+
+        <a th:href="@{/income-dashboard}"
+           class="list-group-item list-group-item-action bg-dark text-white sidebar-link ps-4"
+           th:classappend="${activeMenu == 'income-dashboard'} ? 'active' : ''">
+            <i class="fas fa-tachometer-alt me-2 text-success"></i>Income Dashboard
+        </a>
+
+        <a th:href="@{/income-entries}"
+           class="list-group-item list-group-item-action bg-dark text-white sidebar-link ps-4"
+           th:classappend="${activeMenu == 'income-entries'} ? 'active' : ''">
+            <i class="fas fa-plus-circle me-2 text-success"></i>Income Entries
+        </a>
+
+        <a th:href="@{/income-categories}"
+           class="list-group-item list-group-item-action bg-dark text-white sidebar-link ps-4"
+           th:classappend="${activeMenu == 'income-categories'} ? 'active' : ''">
+            <i class="fas fa-tags me-2 text-success"></i>Income Categories
+        </a>
+
+        <sec:authorize access="hasAnyRole('ADMIN','MANAGER','RECEPTIONIST')">
+        <a th:href="@{/income-reports}"
+           class="list-group-item list-group-item-action bg-dark text-white sidebar-link ps-4"
+           th:classappend="${activeMenu == 'income-reports'} ? 'active' : ''">
+            <i class="fas fa-chart-bar me-2 text-success"></i>Income Reports
+        </sec:authorize>
+        </a>
+
+    </div>
+</div>
+
+<!--
+    Also update SecurityConfig.java — see the SecurityConfig snippet below.
+    Also remove or keep the old /income link (it now redirects or can be removed).
+-->

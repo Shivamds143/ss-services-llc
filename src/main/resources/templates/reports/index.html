@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'reports', 'Reports')}">
+<th:block th:fragment="content">
+<div class="mb-4 mt-2">
+    <h5 class="fw-bold">Reports &amp; Analytics</h5>
+    <p class="text-muted small">Generate and export business reports in Excel format.</p>
+</div>
+
+<div class="row g-4">
+
+    <!-- ═══════════════════════════════════════════════
+         1. DAILY REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#0d6efd;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-calendar-day me-2"></i>Daily Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Inquiries, income, expenses &amp; follow-ups for a single day.</p>
+                <form th:action="@{/reports/daily/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Report Date</label>
+                            <input type="date" name="reportDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         2. WEEKLY REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#6610f2;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-calendar-week me-2"></i>Weekly Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Inquiries, income, expenses &amp; follow-ups for a custom date range.</p>
+                <form th:action="@{/reports/weekly/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${today.minusDays(6)}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm mt-2 text-white" style="background-color:#6610f2;">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         3. MONTHLY SALES REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#198754;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-chart-bar me-2"></i>Monthly Sales Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Sales summary with category-wise income, inquiries &amp; net profit for the month.</p>
+                <form th:action="@{/reports/monthly-sales/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Month</label>
+                            <select name="month" class="form-select form-select-sm">
+                                <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}"
+                                        th:text="${#dates.format(#dates.create(2024,m,1),'MMMM')}"
+                                        th:selected="${m == today.monthValue}"></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Year</label>
+                            <input type="number" name="year" class="form-control form-control-sm"
+                                   th:value="${today.year}" min="2020" max="2030"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         4. QTY SALES REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#fd7e14;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-list-ol me-2"></i>Qty Sales Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Inquiry-type-wise counts — total, approved, rejected, pending &amp; loan amounts.</p>
+                <form th:action="@{/reports/qty-sales/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm mt-2 text-white" style="background-color:#fd7e14;">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         5. YEAR SALES REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#0dcaf0;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-chart-line me-2"></i>Year Sales Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Annual summary with month-wise breakdown of inquiries, income, expenses &amp; net.</p>
+                <form th:action="@{/reports/year-sales/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Year</label>
+                            <input type="number" name="year" class="form-control form-control-sm"
+                                   th:value="${today.year}" min="2020" max="2030"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm mt-2 text-white" style="background-color:#0dcaf0;">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         6. EMPLOYEE PERFORMANCE REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#20c997;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-user-chart me-2"></i>Employee Performance Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Monthly performance — assigned leads, conversion rate &amp; attendance per employee.</p>
+                <form th:action="@{/reports/employee-performance/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Month</label>
+                            <select name="month" class="form-select form-select-sm">
+                                <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}"
+                                        th:text="${#dates.format(#dates.create(2024,m,1),'MMMM')}"
+                                        th:selected="${m == today.monthValue}"></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Year</label>
+                            <input type="number" name="year" class="form-control form-control-sm"
+                                   th:value="${today.year}" min="2020" max="2030"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm mt-2 text-white" style="background-color:#20c997;">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         7. LOAN DISBURSEMENT REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#dc3545;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-hand-holding-usd me-2"></i>Loan Disbursement Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">All approved loans with bank-wise summary, amounts, interest rate &amp; EMI.</p>
+                <form th:action="@{/reports/loan-disbursement/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         8. INSURANCE RENEWAL REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#6f42c1;">
+            <div class="card-header py-3">
+                <h6 class="mb-0 text-white"><i class="fas fa-shield-alt me-2"></i>Insurance Renewal Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Insurance policies with renewals due in next 30 days (highlighted in red) &amp; all records.</p>
+                <form th:action="@{/reports/insurance-renewal/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm mt-2 text-white" style="background-color:#6f42c1;">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         EXISTING: INQUIRY REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#0d6efd;">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Inquiry Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">All inquiries with customer details, loan amounts, bank, and status.</p>
+                <form th:action="@{/reports/inquiries/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         EXISTING: EXPENSE REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#dc3545;">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="fas fa-minus-circle me-2"></i>Expense Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">All expenses with category, payment mode, and vendor details.</p>
+                <form th:action="@{/reports/expenses/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         EXISTING: INCOME REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#198754;">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Income Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">All income records with category, customer, and payment details.</p>
+                <form th:action="@{/reports/income/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label small fw-semibold">From Date</label>
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                   th:value="${firstOfMonth}" required/>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">To Date</label>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                   th:value="${today}" required/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         EXISTING: ATTENDANCE REPORT
+    ════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 report-card" style="--report-header-bg:#0dcaf0;">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Attendance Report</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Monthly attendance report for each employee.</p>
+                <form th:action="@{/reports/attendance/excel}" method="get" class="d-flex flex-column gap-2">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Employee</label>
+                            <select name="employeeId" class="form-select form-select-sm" required>
+                                <option value="">-- Select Employee --</option>
+                                <option th:each="emp : ${employees}"
+                                        th:value="${emp.id}"
+                                        th:text="${emp.employeeName + ' (' + emp.employeeId + ')'}"></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Month</label>
+                            <select name="month" class="form-select form-select-sm">
+                                <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}"
+                                        th:text="${#dates.format(#dates.create(2024,m,1),'MMMM')}"
+                                        th:selected="${m == today.monthValue}"></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-semibold">Year</label>
+                            <input type="number" name="year" class="form-control form-control-sm"
+                                   th:value="${today.year}" min="2020" max="2030"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-info text-white btn-sm mt-2">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+</th:block>
+</html>

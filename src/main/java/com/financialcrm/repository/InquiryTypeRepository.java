@@ -1,0 +1,12 @@
+package com.financialcrm.repository;
+
+import com.financialcrm.entity.InquiryType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface InquiryTypeRepository extends JpaRepository<InquiryType, Long> {
+    List<InquiryType> findByIsActiveTrueOrderBySortOrderAsc();
+}

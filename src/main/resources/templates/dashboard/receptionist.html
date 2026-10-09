@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, ~{::extraCss}, 'dashboard', 'Reception Dashboard')}">
+
+<th:block th:fragment="extraCss">
+<style>
+    .dashboard-hero-copy {
+        max-width: 640px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-subtext {
+        color: var(--crm-muted);
+        max-width: 540px;
+    }
+
+    .dashboard-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .chart-panel {
+        min-height: 100%;
+    }
+
+    .birthday-item + .birthday-item {
+        border-top: 1px solid rgba(216, 236, 228, 0.8);
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</th:block>
+
+<th:block th:fragment="content">
+
+<div class="page-hero mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-xl-7">
+            <div class="dashboard-hero-copy">
+                <span class="page-eyebrow mb-3">
+                    <i class="fas fa-headset"></i>Reception Dashboard
+                </span>
+                <h1 class="display-6 fw-bold mb-3">Keep track of visitors, leads, and follow-ups for today.</h1>
+                <p class="dashboard-subtext mb-4">This dashboard uses the same premium layout and theme as the main dashboard.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{/customers/new}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Customer
+                    </a>
+                    <a th:href="@{/followups}" class="btn btn-outline-primary">
+                        <i class="fas fa-phone-alt me-2"></i>Open Follow-ups
+                    </a>
+                    <a th:href="@{/reports}" class="btn btn-outline-primary" sec:authorize="hasAnyRole('ADMIN','RECEPTIONIST')">
+                        <i class="fas fa-chart-column me-2"></i>Open Reports
+                    </a>
+                    <a th:href="@{/work-tracking/my-work}" class="btn btn-outline-success">
+                        <i class="fas fa-user-clock me-2"></i>Open My Work Log
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="dashboard-stat-grid">
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Today's Visitors</div>
+                    <div class="hero-stat-value" th:text="${todayVisitors}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Total Leads</div>
+                    <div class="hero-stat-value" th:text="${totalLeads}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Follow-ups</div>
+                    <div class="hero-stat-value" th:text="${followupToday}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Approved Cases</div>
+                    <div class="hero-stat-value" th:text="${approvedCases}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Documents Pending</div>
+                    <div class="hero-stat-value" th:text="${pendingCases}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Birthdays</div>
+                    <div class="hero-stat-value" th:text="${#lists.size(todayBirthdays)}">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3"><i class="fas fa-user-plus fs-4"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${todayVisitors}">0</div>
+                    <div class="text-muted small">Today's Visitors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3"><i class="fas fa-file-alt fs-4"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${totalLeads}">0</div>
+                    <div class="text-muted small">Total Leads</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3"><i class="fas fa-check-double fs-4"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${approvedCases}">0</div>
+                    <div class="text-muted small">Approved Cases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3"><i class="fas fa-clock fs-4"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${pendingCases}">0</div>
+                    <div class="text-muted small">Documents Pending</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3"><i class="fas fa-phone-alt fs-4"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${followupToday}">0</div>
+                    <div class="text-muted small">Follow-ups Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mt-1">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-chart-line me-2"></i>Monthly Leads</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 320px;">
+                    <canvas id="monthlyLeadsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-chart-pie me-2"></i>Inquiry Status</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 320px;">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Followups & Birthdays -->
+<div class="row g-3 mt-1">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-bottom-0 py-3 d-flex justify-content-between">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-phone-alt me-2"></i>Today's Follow-ups</h6>
+                <a th:href="@{/followups}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Customer</th><th>Mobile</th><th>Type</th><th>Time</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="f : ${todayFollowups}">
+                                <td th:text="${f.customer.customerName}">-</td>
+                                <td th:text="${f.customer.mobileNumber}">-</td>
+                                <td th:text="${f.inquiry.inquiryType.typeName}">-</td>
+                                <td th:text="${f.followupTime != null ? f.followupTime : '-'}">-</td>
+                                <td><span class="badge" th:classappend="${f.status.name() == 'PENDING'} ? 'bg-warning text-dark' : 'bg-success'" th:text="${f.status}">-</span></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(todayFollowups)}">
+                                <td colspan="5" class="text-center text-muted py-3">No follow-ups scheduled for today</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-birthday-cake me-2"></i>Today's Birthdays</h6>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(todayBirthdays)}" class="text-center text-muted py-3">
+                    <i class="fas fa-smile fa-2x mb-2 d-block"></i>No birthdays today
+                </div>
+                <div th:each="c : ${todayBirthdays}" class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                         style="width:40px;height:40px;font-weight:bold;">
+                        <span th:text="${#strings.substring(c.customerName, 0, 1).toUpperCase()}"></span>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" th:text="${c.customerName}"></div>
+                        <div class="text-muted small" th:text="${c.mobileNumber}"></div>
+                    </div>
+                    <div class="ms-auto">
+                        <a th:href="'https://wa.me/91' + ${c.mobileNumber}" target="_blank"
+                           class="btn btn-sm btn-success py-1 px-2">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+        onerror="var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; document.head.appendChild(s);"></script>
+<script th:inline="javascript">
+    const monthlyData = /*[[${monthlyLeadsData}]]*/ [];
+    const statusData   = /*[[${inquiryStatusData}]]*/ [];
+
+    function renderReceptionCharts() {
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const leadsArr = new Array(12).fill(0);
+        if (monthlyData) {
+            monthlyData.forEach(function(row) {
+                if (row && row[0]) leadsArr[row[0] - 1] = row[1] || 0;
+            });
+        }
+
+        const leadsCanvas = document.getElementById('monthlyLeadsChart');
+        if (leadsCanvas) {
+            new Chart(leadsCanvas, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Leads',
+                        data: leadsArr,
+                        backgroundColor: 'rgba(89, 201, 165, 0.72)',
+                        borderColor: '#238b69',
+                        borderWidth: 1,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        const statusLabels = [], statusCounts = [];
+        const statusColors = ['#238b69','#59c9a5','#84e1bc','#1c5f49','#b6f1da','#a7dcca'];
+        if (statusData) {
+            statusData.forEach(function(row) { if (row) { statusLabels.push(row[0]); statusCounts.push(row[1]); } });
+        }
+        const statusCanvas = document.getElementById('statusPieChart');
+        if (statusCanvas && statusLabels.length > 0) {
+            new Chart(statusCanvas, {
+                type: 'doughnut',
+                data: { labels: statusLabels, datasets: [{ data: statusCounts, backgroundColor: statusColors, borderWidth: 2 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+                }
+            });
+        }
+    }
+
+    (function waitForChartJs(attemptsLeft) {
+        if (typeof Chart !== 'undefined') {
+            renderReceptionCharts();
+            return;
+        }
+        if (attemptsLeft <= 0) {
+            console.error('Chart.js failed to load from both CDNs - dashboard charts will not render.');
+            return;
+        }
+        setTimeout(function () { waitForChartJs(attemptsLeft - 1); }, 200);
+    })(25);
+</script>
+</th:block>
+</html>

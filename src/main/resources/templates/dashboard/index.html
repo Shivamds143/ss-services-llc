@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, ~{::extraCss}, 'dashboard', 'Dashboard')}">
+
+<th:block th:fragment="extraCss">
+<style>
+    .dashboard-hero-copy {
+        max-width: 640px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-subtext {
+        color: var(--crm-muted);
+        max-width: 540px;
+    }
+
+    .dashboard-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .chart-panel {
+        min-height: 100%;
+    }
+
+    .birthday-item + .birthday-item {
+        border-top: 1px solid rgba(216, 236, 228, 0.8);
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</th:block>
+
+<th:block th:fragment="content">
+<div class="page-hero mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-xl-7">
+            <div class="dashboard-hero-copy">
+                <span class="page-eyebrow mb-3">
+                    <i class="fas fa-seedling"></i>Premium CRM Dashboard
+                </span>
+                <h1 class="display-6 fw-bold mb-3">Manage leads, teams, and revenue with a cleaner premium workflow.</h1>
+                <p class="dashboard-subtext mb-4">The workspace now uses a modern Bootstrap-based green palette inspired by your reference design, with softer surfaces, clearer hierarchy, and polished data cards.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{/customers/new}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Customer
+                    </a>
+                    <a th:href="@{/reports}" class="btn btn-outline-primary" sec:authorize="hasAnyRole('ADMIN','RECEPTIONIST')">
+                        <i class="fas fa-chart-column me-2"></i>Open Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="dashboard-stat-grid">
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Today's Visitors</div>
+                    <div class="hero-stat-value" th:text="${todayVisitors}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Total Leads</div>
+                    <div class="hero-stat-value" th:text="${totalLeads}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Follow-ups</div>
+                    <div class="hero-stat-value" th:text="${followupToday}">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Monthly Income</div>
+                    <div class="hero-stat-value">₹<span th:text="${#numbers.formatDecimal(monthlyIncome, 0, 'COMMA', 0, 'POINT')}">0</span></div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Monthly Expense</div>
+                    <div class="hero-stat-value">₹<span th:text="${#numbers.formatDecimal(monthlyExpense, 0, 'COMMA', 0, 'POINT')}">0</span></div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Employees</div>
+                    <div class="hero-stat-value" th:text="${totalEmployees}">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-user-plus fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${todayVisitors}">0</div>
+                    <div class="text-muted small">Today's Visitors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-file-alt fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${totalLeads}">0</div>
+                    <div class="text-muted small">Total Leads</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-check-double fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${approvedCases}">0</div>
+                    <div class="text-muted small">Approved Cases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-clock fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${pendingCases}">0</div>
+                    <div class="text-muted small">Documents Pending</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <!-- KPI Cards Row 2 -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-phone-alt fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${followupToday}">0</div>
+                    <div class="text-muted small">Follow-ups Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-users fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold" th:text="${totalEmployees}">0</div>
+                    <div class="text-muted small">Total Employees</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-rupee-sign fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">
+                        ₹<span th:text="${#numbers.formatDecimal(monthlyIncome, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Monthly Income</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-rupee-sign fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">
+                        ₹<span th:text="${#numbers.formatDecimal(monthlyExpense, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Monthly Expense</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-wallet fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">
+                        ₹<span th:text="${#numbers.formatDecimal(totalIncome, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Total Income</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-file-invoice-dollar fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">
+                        ₹<span th:text="${#numbers.formatDecimal(totalExpense, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Total Expenses</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-12">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon rounded-3 p-3 me-3">
+                    <i class="fas fa-chart-simple fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">
+                        ₹<span th:text="${#numbers.formatDecimal(netProfit, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Net Profit</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-chart-line me-2"></i>Monthly Income vs Expenses</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 320px;">
+                    <canvas id="incomeVsExpenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-chart-pie me-2"></i>Inquiry Status</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 320px;">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-arrow-up-right-dots me-2"></i>Income Trend</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 280px;">
+                    <canvas id="incomeTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm chart-panel">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-arrow-down-right-dots me-2"></i>Expense Trend</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div style="position: relative; height: 280px;">
+                    <canvas id="expenseTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-bottom-0 py-3 d-flex justify-content-between">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-phone-alt me-2"></i>Today's Follow-ups</h6>
+                <a th:href="@{/followups}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Customer</th><th>Mobile</th><th>Type</th><th>Time</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="f : ${todayFollowups}">
+                                <td th:text="${f.customer.customerName}">-</td>
+                                <td th:text="${f.customer.mobileNumber}">-</td>
+                                <td th:text="${f.inquiry.inquiryType.typeName}">-</td>
+                                <td th:text="${f.followupTime != null ? f.followupTime : '-'}">-</td>
+                                <td><span class="badge" th:classappend="${f.status.name() == 'PENDING'} ? 'bg-warning text-dark' : 'bg-success'" th:text="${f.status}">-</span></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(todayFollowups)}">
+                                <td colspan="5" class="text-center text-muted py-3">No follow-ups scheduled for today</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-birthday-cake me-2"></i>Today's Birthdays</h6>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(todayBirthdays)}" class="text-center text-muted py-3">
+                    <i class="fas fa-smile fa-2x mb-2 d-block"></i>No birthdays today
+                </div>
+                <div th:each="c : ${todayBirthdays}" class="d-flex align-items-center birthday-item">
+                    <div class="avatar-circle text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                         style="width:40px;height:40px;font-weight:bold;">
+                        <span th:text="${#strings.substring(c.customerName, 0, 1).toUpperCase()}"></span>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" th:text="${c.customerName}"></div>
+                        <div class="text-muted small" th:text="${c.mobileNumber}"></div>
+                    </div>
+                    <div class="ms-auto">
+                        <a th:href="'https://wa.me/91' + ${c.mobileNumber}" target="_blank"
+                           class="btn btn-sm btn-success py-1 px-2">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     INCOME GRAPHS ROW — Loan | Insurance | Mutual Fund
+════════════════════════════════════════════════════════════════════════ -->
+<div class="row g-3 mt-1">
+    <!-- Graph 1: Loan Income — Sanctioned vs Rejected -->
+    <div class="col-xl-5 col-lg-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:14px; overflow:hidden;">
+            <div class="card-header border-bottom-0 py-3 d-flex align-items-center gap-2"
+                 style="background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%); border-radius:14px 14px 0 0;">
+                <i class="fas fa-hand-holding-usd text-Black fs-5"></i>
+                <div>
+                    <h6 class="mb-0 fw-bold text-Black">Loan Income</h6>
+                    <small class="text-Black opacity-75">Sanctioned vs Rejected (Loan Amount)</small>
+                </div>
+            </div>
+            <div class="card-body pt-3">
+                <div id="loanChartWrap" style="position:relative; height:280px;">
+                    <canvas id="loanIncomeChart"></canvas>
+                    <div id="loanNoData" class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                        <i class="fas fa-chart-bar fa-2x text-muted mb-2 d-block"></i>
+                        <span class="text-muted small">No loan data available yet</span>
+                    </div>
+                </div>
+                <div id="loanLegend" class="d-flex justify-content-center gap-4 mt-2 flex-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph 2: Insurance Income — Life / Health / General -->
+    <div class="col-xl-4 col-lg-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:14px; overflow:hidden;">
+            <div class="card-header border-bottom-0 py-3 d-flex align-items-center gap-2"
+                 style="background:linear-gradient(135deg,#00897b 0%,#004d40 100%); border-radius:14px 14px 0 0;">
+                <i class="fas fa-shield-alt text-Black fs-5"></i>
+                <div>
+                    <h6 class="mb-0 fw-bold text-Black">Insurance Income</h6>
+                    <small class="text-Black opacity-75">Life · Health · General breakdown</small>
+                </div>
+            </div>
+            <div class="card-body pt-3">
+                <div id="insChartWrap" style="position:relative; height:280px;">
+                    <canvas id="insuranceIncomeChart"></canvas>
+                    <div id="insNoData" class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                        <i class="fas fa-shield-alt fa-2x text-muted mb-2 d-block"></i>
+                        <span class="text-muted small">No insurance income recorded yet</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph 3: Mutual Fund Income -->
+    <div class="col-xl-3 col-lg-12">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:14px; overflow:hidden;">
+            <div class="card-header border-bottom-0 py-3 d-flex align-items-center gap-2"
+                 style="background:linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%); border-radius:14px 14px 0 0;">
+                <i class="fas fa-chart-pie text-Black fs-5"></i>
+                <div>
+                    <h6 class="mb-0 fw-bold text-Black">Mutual Fund Income</h6>
+                    <small class="text-Black opacity-75">MF / SIP category breakdown</small>
+                </div>
+            </div>
+            <div class="card-body pt-3 d-flex flex-column">
+                <div id="mfChartWrap" style="position:relative; height:200px;">
+                    <canvas id="mutualFundIncomeChart"></canvas>
+                    <div id="mfNoData" class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-2 d-block"></i>
+                        <span class="text-muted small">No MF income recorded yet</span>
+                    </div>
+                </div>
+                <div id="mfTotalBox" class="mt-auto pt-3 border-top text-center d-none">
+                    <div class="text-muted small mb-1">Total MF Income</div>
+                    <div class="fs-4 fw-bold text-purple" id="mfTotalValue" style="color:#7b1fa2;">₹0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+        onerror="var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'; document.head.appendChild(s);"></script>
+<script th:inline="javascript">
+    const monthlyData = /*[[${monthlyLeadsData}]]*/ [];
+    const statusData   = /*[[${inquiryStatusData}]]*/ [];
+
+    function renderDashboardCharts() {
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const leadsArr = new Array(12).fill(0);
+        if (monthlyData) {
+            monthlyData.forEach(function(row) {
+                if (row && row[0]) leadsArr[row[0] - 1] = row[1] || 0;
+            });
+        }
+        const leadsCanvas = document.getElementById('monthlyLeadsChart');
+        if (leadsCanvas) {
+            new Chart(leadsCanvas, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Leads',
+                        data: leadsArr,
+                        backgroundColor: 'rgba(89, 201, 165, 0.72)',
+                        borderColor: '#238b69',
+                        borderWidth: 1,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        const statusLabels = [], statusCounts = [];
+        const statusColors = ['#238b69','#59c9a5','#84e1bc','#1c5f49','#b6f1da','#a7dcca'];
+        if (statusData) {
+            statusData.forEach(function(row) { if (row) { statusLabels.push(row[0]); statusCounts.push(row[1]); } });
+        }
+        const statusCanvas = document.getElementById('statusPieChart');
+        if (statusCanvas && statusLabels.length > 0) {
+            new Chart(statusCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{ data: statusCounts, backgroundColor: statusColors, borderWidth: 2 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+                }
+            });
+        }
+
+        const incomeTrendData = /*[[${incomeMonthlyTrend}]]*/ [];
+        const expenseTrendData = /*[[${expenseMonthlyTrend}]]*/ [];
+
+        const trendOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ₹' + ctx.parsed.y.toLocaleString('en-IN') } }
+            }
+        };
+
+        const incomeTrendCanvas = document.getElementById('incomeTrendChart');
+        if (incomeTrendCanvas) {
+            new Chart(incomeTrendCanvas, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Income',
+                        data: incomeTrendData,
+                        borderColor: '#238b69',
+                        backgroundColor: 'rgba(89, 201, 165, 0.4)',
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: trendOptions
+            });
+        }
+
+        const expenseTrendCanvas = document.getElementById('expenseTrendChart');
+        if (expenseTrendCanvas) {
+            new Chart(expenseTrendCanvas, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Expense',
+                        data: expenseTrendData,
+                        borderColor: '#d9534f',
+                        backgroundColor: 'rgba(220, 53, 69, 0.35)',
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: trendOptions
+            });
+        }
+
+        const incomeVsExpenseCanvas = document.getElementById('incomeVsExpenseChart');
+        if (incomeVsExpenseCanvas) {
+            new Chart(incomeVsExpenseCanvas, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeTrendData,
+                            backgroundColor: 'rgba(52,168,83,0.7)',
+                            borderColor: '#34a853',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Expense',
+                            data: expenseTrendData,
+                            backgroundColor: 'rgba(220,53,69,0.7)',
+                            borderColor: '#c82333',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ₹' + ctx.parsed.y.toLocaleString('en-IN') } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GRAPH 1 — Loan Income: Sanctioned vs Rejected
+        // ════════════════════════════════════════════════════════════════════
+        function buildMonthlyDatasets(rawData, preferredLabels, colorMap) {
+            const labels = preferredLabels.slice();
+            const totalsByLabel = {};
+
+            labels.forEach(label => totalsByLabel[label] = new Array(12).fill(0));
+
+            if (rawData && rawData.length > 0) {
+                rawData.forEach(function(row) {
+                    if (!row || row.length < 3) return;
+                    const monthIndex = (parseInt(row[0]) || 0) - 1;
+                    const label = String(row[1]);
+                    const amount = parseFloat(row[2]) || 0;
+                    if (monthIndex < 0 || monthIndex > 11) return;
+                    if (!totalsByLabel[label]) {
+                        labels.push(label);
+                        totalsByLabel[label] = new Array(12).fill(0);
+                    }
+                    totalsByLabel[label][monthIndex] += amount;
+                });
+            }
+
+            return labels.map(function(label, index) {
+                const color = colorMap[label] || colorMap[index] || 'rgba(120,120,120,0.72)';
+                return {
+                    label: label,
+                    data: totalsByLabel[label],
+                    backgroundColor: color,
+                    borderColor: color,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false
+                };
+            }).filter(dataset => dataset.data.some(value => value > 0));
+        }
+
+        function monthlyBarOptions(valueAxis) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ₹' + ctx.parsed[valueAxis].toLocaleString('en-IN')
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v.toLocaleString('en-IN')) }
+                    },
+                    x: { grid: { display: false } }
+                }
+            };
+        }
+
+        const loanRawData = /*[[${loanIncomeData}]]*/ [];
+        const loanIncomeCanvas = document.getElementById('loanIncomeChart');
+        const loanNoData       = document.getElementById('loanNoData');
+        const loanLegend       = document.getElementById('loanLegend');
+
+        if (loanIncomeCanvas) {
+            const normalizedLoanRows = [];
+            if (loanRawData && loanRawData.length > 0) {
+                loanRawData.forEach(function(row) {
+                    if (!row || row.length < 3) return;
+                    const label = String(row[1]).toUpperCase() === 'APPROVED' ? 'Sanctioned' : 'Rejected';
+                    normalizedLoanRows.push([row[0], label, row[2]]);
+                });
+            }
+            const loanDatasets = buildMonthlyDatasets(normalizedLoanRows, ['Sanctioned', 'Rejected'], {
+                'Sanctioned': 'rgba(52,168,83,0.82)',
+                'Rejected': 'rgba(229,57,53,0.82)'
+            });
+
+            if (loanDatasets.length === 0) {
+                loanNoData && loanNoData.classList.remove('d-none');
+                loanIncomeCanvas.style.display = 'none';
+            } else {
+                loanNoData && loanNoData.classList.add('d-none');
+                new Chart(loanIncomeCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: loanDatasets
+                    },
+                    options: monthlyBarOptions('y')
+                });
+
+                if (loanLegend) {
+                    loanLegend.innerHTML = '';
+                    loanDatasets.forEach(function(dataset) {
+                        const total = dataset.data.reduce((sum, value) => sum + value, 0);
+                        const dot = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dataset.backgroundColor + ';margin-right:5px;"></span>';
+                        loanLegend.innerHTML += '<div class="small text-muted">' + dot + dataset.label + ': <strong>₹' + total.toLocaleString('en-IN') + '</strong></div>';
+                    });
+                }
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GRAPH 2 — Insurance Income: Life / Health / General (Bar)
+        // ════════════════════════════════════════════════════════════════════
+        const insRawData      = /*[[${insuranceIncomeData}]]*/ [];
+        const insCanvas       = document.getElementById('insuranceIncomeChart');
+        const insNoDataEl     = document.getElementById('insNoData');
+
+        if (insCanvas) {
+            const insDatasets = buildMonthlyDatasets(insRawData, ['Life Insurance', 'Health Insurance', 'General Insurance'], {
+                'Life Insurance': 'rgba(2,136,209,0.78)',
+                'Health Insurance': 'rgba(0,137,123,0.78)',
+                'General Insurance': 'rgba(245,124,0,0.78)'
+            });
+
+            if (insDatasets.length === 0) {
+                insNoDataEl && insNoDataEl.classList.remove('d-none');
+                insCanvas.style.display = 'none';
+            } else {
+                insNoDataEl && insNoDataEl.classList.add('d-none');
+                new Chart(insCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: insDatasets
+                    },
+                    options: monthlyBarOptions('y')
+                });
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GRAPH 3 — Mutual Fund Income (Horizontal Bar)
+        // ════════════════════════════════════════════════════════════════════
+        const mfRawData    = /*[[${mutualFundIncomeData}]]*/ [];
+        const mfCanvas     = document.getElementById('mutualFundIncomeChart');
+        const mfNoDataEl   = document.getElementById('mfNoData');
+        const mfTotalBox   = document.getElementById('mfTotalBox');
+        const mfTotalValue = document.getElementById('mfTotalValue');
+
+        if (mfCanvas) {
+            const mfDatasets = buildMonthlyDatasets(mfRawData, ['SIP', 'Lumpsum MF'], {
+                'SIP': 'rgba(123,31,162,0.78)',
+                'Lumpsum MF': 'rgba(171,71,188,0.78)',
+                0: 'rgba(123,31,162,0.78)',
+                1: 'rgba(171,71,188,0.78)',
+                2: 'rgba(74,20,140,0.78)',
+                3: 'rgba(186,104,200,0.78)'
+            });
+
+            if (mfDatasets.length === 0) {
+                mfNoDataEl && mfNoDataEl.classList.remove('d-none');
+                mfCanvas.style.display = 'none';
+            } else {
+                mfNoDataEl && mfNoDataEl.classList.add('d-none');
+                new Chart(mfCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: mfDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ctx.dataset.label + ': ₹' + ctx.parsed.y.toLocaleString('en-IN')
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v.toLocaleString('en-IN')) }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+
+                const mfTotal = mfDatasets.reduce((sum, dataset) => {
+                    return sum + dataset.data.reduce((innerSum, value) => innerSum + value, 0);
+                }, 0);
+                if (mfTotalBox && mfTotalValue && mfTotal > 0) {
+                    mfTotalBox.classList.remove('d-none');
+                    mfTotalValue.textContent = '₹' + mfTotal.toLocaleString('en-IN');
+                }
+            }
+        }
+    }
+
+    (function waitForChartJs(attemptsLeft) {
+        if (typeof Chart !== 'undefined') {
+            renderDashboardCharts();
+            return;
+        }
+        if (attemptsLeft <= 0) {
+            console.error('Chart.js failed to load from both CDNs - dashboard charts will not render.');
+            return;
+        }
+        setTimeout(function () { waitForChartJs(attemptsLeft - 1); }, 200);
+    })(25);
+</script>
+</th:block>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, ~{::extraCss}, 'dashboard', 'My Dashboard')}">
+
+<th:block th:fragment="extraCss">
+<style>
+    .employee-spatial {
+        display: grid;
+        gap: 1rem;
+    }
+    .spatial-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 1.8rem;
+        background:
+            radial-gradient(circle at top right, rgba(168, 239, 207, 0.42), transparent 28%),
+            linear-gradient(135deg, #ffffff 0%, #f2fbf7 55%, #eaf7f1 100%);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 24px 52px rgba(19, 36, 29, 0.09);
+    }
+    .spatial-hero::before {
+        content: "";
+        position: absolute;
+        inset: auto -40px -40px auto;
+        width: 220px;
+        height: 220px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(89, 201, 165, 0.2), transparent 68%);
+    }
+    .hero-copy {
+        position: relative;
+        z-index: 1;
+        max-width: 660px;
+    }
+    .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    .floating-metric {
+        padding: 1rem 1.05rem;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(137, 222, 191, 0.3);
+        box-shadow: 0 16px 28px rgba(32, 78, 61, 0.08);
+    }
+    .floating-metric-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--crm-muted);
+    }
+    .floating-metric-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--crm-ink);
+    }
+    .spatial-panel {
+        border-radius: 28px;
+        padding: 1.35rem;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 24px 50px rgba(19, 36, 29, 0.08);
+    }
+    .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .panel-title h5,
+    .panel-title h6 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--crm-ink);
+    }
+    .target-zone {
+        display: grid;
+        gap: 1rem;
+    }
+    .target-track {
+        padding: 1rem;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #fbfefd 0%, #f3fbf7 100%);
+        border: 1px solid rgba(216, 236, 228, 0.9);
+    }
+    .target-track-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.92rem;
+    }
+    .target-track strong {
+        color: var(--crm-ink);
+    }
+    .target-progress {
+        height: 12px;
+        border-radius: 999px;
+        background: #eaf5f0;
+        overflow: hidden;
+    }
+    .target-progress-bar {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--crm-primary-dark), var(--crm-primary));
+    }
+    .status-stack {
+        display: grid;
+        gap: 1rem;
+    }
+    .status-orb {
+        position: relative;
+        overflow: hidden;
+        min-height: 220px;
+        border-radius: 28px;
+        padding: 1.4rem;
+        background:
+            radial-gradient(circle at top, rgba(132, 225, 188, 0.28), transparent 36%),
+            linear-gradient(180deg, #18392f 0%, #10261f 100%);
+        color: #fff;
+    }
+    .status-orb::after {
+        content: "";
+        position: absolute;
+        right: -10px;
+        bottom: -20px;
+        width: 140px;
+        height: 140px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .attendance-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .attendance-meta {
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.9rem;
+    }
+    .quick-card {
+        border-radius: 24px;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f4fcf8 100%);
+        border: 1px solid rgba(216, 236, 228, 0.9);
+    }
+    .birthdays-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+    .birthday-card {
+        display: flex;
+        align-items: center;
+        gap: 0.95rem;
+        padding: 1rem;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #fbfefd 0%, #f3fbf7 100%);
+        border: 1px solid rgba(216, 236, 228, 0.9);
+    }
+    .birthday-avatar {
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        color: #fff;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--crm-primary-dark), var(--crm-primary));
+        box-shadow: 0 12px 24px rgba(89, 201, 165, 0.22);
+    }
+    .empty-state {
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: var(--crm-muted);
+    }
+    @media (max-width: 992px) {
+        .hero-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</th:block>
+
+<th:block th:fragment="content">
+<div class="employee-spatial">
+    <div class="spatial-hero" th:if="${employee != null}">
+        <div class="row g-4 align-items-center">
+            <div class="col-xl-7">
+                <div class="hero-copy">
+                    <span class="page-eyebrow mb-3">
+                        <i class="fas fa-cube me-1"></i>Spatial Employee Dashboard
+                    </span>
+                    <h1 class="display-6 fw-bold mb-3" th:text="${'Welcome back, ' + employee.employeeName + '!'}">Welcome back!</h1>
+                    <p class="text-muted mb-4">Track your current month performance, attendance status, and daily action flow inside a more layered and focused workspace.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a th:href="@{/work-tracking/my-work}" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>Open My Work Log
+                        </a>
+                        <span class="btn btn-outline-primary disabled">Current Date: <span th:text="${#temporals.format(currentDate, 'dd MMM yyyy')}">01 Jan 2026</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="hero-grid">
+                    <div class="floating-metric">
+                        <div class="floating-metric-label">Leads</div>
+                        <div class="floating-metric-value" th:text="${monthTotals[0]}">0</div>
+                    </div>
+                    <div class="floating-metric">
+                        <div class="floating-metric-label">Calls</div>
+                        <div class="floating-metric-value" th:text="${monthTotals[1]}">0</div>
+                    </div>
+                    <div class="floating-metric">
+                        <div class="floating-metric-label">Connected</div>
+                        <div class="floating-metric-value" th:text="${monthTotals[2]}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-hero" th:if="${employee == null}">
+        <span class="page-eyebrow mb-3">
+            <i class="fas fa-user-slash me-1"></i>Profile Link Required
+        </span>
+        <h2 class="fw-bold mb-2">Your login is not linked to an employee profile yet.</h2>
+        <p class="text-muted mb-0">Please contact the admin to link this account so your personal dashboard, attendance status, and work targets can be displayed correctly.</p>
+    </div>
+
+    <div class="row g-3" th:if="${employee != null}">
+        <div class="col-xl-7">
+            <div class="spatial-panel h-100">
+                <div class="panel-title">
+                    <h5><i class="fas fa-bullseye me-2 text-success"></i>Target Space</h5>
+                    <span class="badge text-bg-light" th:text="${target != null ? 'Active target loaded' : 'No target yet'}">Active target loaded</span>
+                </div>
+
+                <div class="target-zone" th:if="${target != null}">
+                    <div class="target-track">
+                        <div class="target-track-head">
+                            <strong>Lead Performance</strong>
+                            <span th:text="${target.leadsAchieved + ' / ' + target.leadsTarget}">0 / 0</span>
+                        </div>
+                        <div class="target-progress">
+                            <div class="target-progress-bar" th:style="${'width:' + target.leadsPercent() + '%'}"></div>
+                        </div>
+                    </div>
+                    <div class="target-track">
+                        <div class="target-track-head">
+                            <strong>Call Performance</strong>
+                            <span th:text="${target.callsAchieved + ' / ' + target.callsTarget}">0 / 0</span>
+                        </div>
+                        <div class="target-progress">
+                            <div class="target-progress-bar" th:style="${'width:' + target.callsPercent() + '%'}"></div>
+                        </div>
+                    </div>
+                    <div class="target-track">
+                        <div class="target-track-head">
+                            <strong>Conversion Performance</strong>
+                            <span th:text="${target.conversionAchieved + ' / ' + target.conversionTarget}">0 / 0</span>
+                        </div>
+                        <div class="target-progress">
+                            <div class="target-progress-bar" th:style="${'width:' + target.conversionPercent() + '%'}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="empty-state" th:if="${target == null}">
+                    <i class="fas fa-bullseye fa-2x mb-3 d-block text-success"></i>
+                    No monthly target has been assigned to you yet.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5">
+            <div class="status-stack h-100">
+                <div class="status-orb">
+                    <div class="panel-title mb-3">
+                        <h5 class="text-white"><i class="fas fa-calendar-check me-2"></i>Attendance Orbit</h5>
+                    </div>
+                    <div class="mb-3">
+                        <span th:if="${todayAttendance == null}" class="attendance-pill">Not Marked</span>
+                        <span th:if="${todayAttendance != null and todayAttendance.attendanceType.name() == 'PRESENT'}" class="attendance-pill">Present</span>
+                        <span th:if="${todayAttendance != null and todayAttendance.attendanceType.name() == 'ABSENT'}" class="attendance-pill">Absent</span>
+                        <span th:if="${todayAttendance != null and todayAttendance.attendanceType.name() == 'HALF_DAY'}" class="attendance-pill">Half Day</span>
+                        <span th:if="${todayAttendance != null and todayAttendance.attendanceType.name() == 'LEAVE'}" class="attendance-pill">On Leave</span>
+                        <span th:if="${todayAttendance != null and (todayAttendance.attendanceType.name() == 'HOLIDAY' or todayAttendance.attendanceType.name() == 'WEEK_OFF')}" class="attendance-pill" th:text="${todayAttendance.attendanceType}">Holiday</span>
+                    </div>
+                    <p class="attendance-meta mb-0">Your attendance status is shown here for quick daily reference.</p>
+                </div>
+
+                <div class="quick-card">
+                    <div class="panel-title mb-2">
+                        <h6><i class="fas fa-rocket me-2 text-success"></i>Action Dock</h6>
+                    </div>
+                    <p class="text-muted small mb-3">Update your leads, calls, and notes from one focused action area.</p>
+                    <a th:href="@{/work-tracking/my-work}" class="btn btn-primary w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Go to My Work Log
+                    </a>
+                </div>
+
+                <div class="quick-card mt-3">
+                    <div class="panel-title mb-2">
+                        <h6><i class="fas fa-clipboard-list me-2 text-success"></i>Assigned Work</h6>
+                    </div>
+                    <div th:if="${#lists.isEmpty(assignedWorkToday)}" class="text-muted small">No work assigned for today yet.</div>
+                    <div th:if="${not #lists.isEmpty(assignedWorkToday)}" class="d-grid gap-2">
+                        <div th:each="work : ${assignedWorkToday}" class="border rounded-3 p-2">
+                            <div class="fw-semibold small" th:text="${work.workTitle ?: 'Assigned Work'}">Assigned Work</div>
+                            <div class="text-muted small" th:text="${#strings.abbreviate(work.workDescription ?: work.workSummary ?: '-', 80)}">Description</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spatial-panel">
+        <div class="panel-title">
+            <h5><i class="fas fa-birthday-cake me-2 text-success"></i>Today's Birthdays</h5>
+            <span class="badge text-bg-light" th:text="${#lists.size(todayBirthdays) + ' visible'}">0 visible</span>
+        </div>
+
+        <div th:if="${#lists.isEmpty(todayBirthdays)}" class="empty-state">
+            <i class="fas fa-smile fa-2x mb-3 d-block text-success"></i>
+            No birthdays today.
+        </div>
+
+        <div class="birthdays-grid" th:if="${not #lists.isEmpty(todayBirthdays)}">
+            <div th:each="c : ${todayBirthdays}" class="birthday-card">
+                <div class="birthday-avatar">
+                    <span th:text="${#strings.substring(c.customerName, 0, 1).toUpperCase()}">A</span>
+                </div>
+                <div>
+                    <div class="fw-semibold" th:text="${c.customerName}">Customer Name</div>
+                    <div class="text-muted small" th:text="${c.mobileNumber}">9999999999</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</th:block>
+</html>

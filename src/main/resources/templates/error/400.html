@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>400 - Bad Request</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}"/>
+</head>
+<body class="bg-light">
+<div class="container d-flex justify-content-center align-items-center" style="min-height:100vh">
+    <div class="text-center">
+        <h1 class="display-1 fw-bold text-warning">400</h1>
+        <h2 class="mb-3">Bad Request</h2>
+        <p class="text-muted mb-4" th:text="${errorMessage ?: 'The request was invalid.'}">The request was invalid.</p>
+        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

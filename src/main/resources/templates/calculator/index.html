@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, ~{::extraCss}, 'calculator', 'Calculators')}">
+
+<th:block th:fragment="extraCss">
+<style>
+    .calc-shell {
+        display: grid;
+        grid-template-columns: 310px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .calc-sidebar,
+    .calc-panel,
+    .calc-result-card {
+        background: #fff;
+        border: 1px solid rgba(216, 236, 228, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 10px 28px rgba(28, 95, 73, 0.08);
+    }
+
+    .calc-sidebar {
+        position: sticky;
+        top: 88px;
+        max-height: calc(100vh - 110px);
+        overflow: hidden;
+    }
+
+    .calc-list {
+        max-height: calc(100vh - 245px);
+        overflow-y: auto;
+    }
+
+    .calc-search {
+        border-color: rgba(89, 201, 165, 0.45);
+    }
+
+    .calc-category-title {
+        color: #5e716b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.65rem 1rem 0.35rem;
+    }
+
+    .calc-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        padding: 0.68rem 1rem;
+        color: #263c35;
+        display: flex;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .calc-item:hover,
+    .calc-item.active {
+        background: linear-gradient(90deg, rgba(89, 201, 165, 0.22), rgba(89, 201, 165, 0.04));
+        color: #0d5d45;
+    }
+
+    .calc-item i {
+        width: 18px;
+        color: #238b69;
+    }
+
+    .calc-layout {
+        display: grid;
+        grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+        gap: 1rem;
+    }
+
+    .calc-input-grid {
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .calc-output-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .calc-result-card {
+        padding: 1rem;
+        min-height: 94px;
+    }
+
+    .calc-result-label {
+        color: #62766f;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .calc-result-value {
+        color: #10251f;
+        font-size: 1.35rem;
+        font-weight: 800;
+        line-height: 1.15;
+        word-break: break-word;
+    }
+
+    .calc-main-value {
+        background: linear-gradient(135deg, #0f6f52, #58c7a4);
+        color: #fff;
+        border: 0;
+    }
+
+    .calc-main-value .calc-result-label,
+    .calc-main-value .calc-result-value {
+        color: #fff;
+    }
+
+    .calc-chart-wrap {
+        height: 260px;
+        min-height: 260px;
+    }
+
+    .calc-note {
+        color: #667c75;
+        font-size: 0.82rem;
+    }
+
+    @media (max-width: 1100px) {
+        .calc-shell,
+        .calc-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .calc-sidebar {
+            position: static;
+            max-height: none;
+        }
+
+        .calc-list {
+            max-height: 360px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .calc-output-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</th:block>
+
+<th:block th:fragment="content">
+<div class="mb-3 mt-2">
+    <h5 class="fw-bold mb-1">Financial Calculators</h5>
+    <p class="text-muted small mb-0">Investment, loan, tax, salary, GST, retirement, and stock calculators in one workspace.</p>
+</div>
+
+<div class="calc-shell">
+    <aside class="calc-sidebar">
+        <div class="p-3 border-bottom">
+            <label class="form-label small fw-semibold mb-1" for="calculatorSearch">Search calculator</label>
+            <input id="calculatorSearch" class="form-control calc-search" type="search" placeholder="Search SIP, EMI, GST...">
+        </div>
+        <div class="calc-list" id="calculatorList"></div>
+    </aside>
+
+    <section class="calc-layout">
+        <div class="calc-panel">
+            <div class="p-4 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon rounded-3 p-3">
+                        <i id="activeCalculatorIcon" class="fas fa-chart-line fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 id="activeCalculatorName" class="fw-bold mb-1">SIP Calculator</h5>
+                        <div id="activeCalculatorDescription" class="text-muted small"></div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="calculatorForm" class="p-4 calc-input-grid"></form>
+        </div>
+
+        <div class="calc-panel">
+            <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold mb-0"><i class="fas fa-square-poll-vertical me-2"></i>Result</h6>
+                <span id="activeCalculatorBadge" class="badge bg-success-subtle text-success"></span>
+            </div>
+            <div class="p-4">
+                <div id="calculatorResults" class="calc-output-grid mb-4"></div>
+                <div class="calc-chart-wrap">
+                    <canvas id="calculatorChart"></canvas>
+                </div>
+                <div id="calculatorNote" class="calc-note mt-3"></div>
+            </div>
+        </div>
+    </section>
+</div>
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script th:inline="none">
+const moneyFormatter = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+const decimalFormatter = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 });
+const fmtMoney = value => 'Rs. ' + moneyFormatter.format(clean(value));
+const fmtNumber = value => decimalFormatter.format(clean(value));
+const fmtPercent = value => fmtNumber(value) + '%';
+const clean = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+const monthlyRate = annualRate => clean(annualRate) / 12 / 100;
+const annualRate = rate => clean(rate) / 100;
+const pow = Math.pow;
+
+let activeCalculatorId = 'sip';
+let chartInstance = null;
+
+const input = (id, label, value, opts = {}) => ({
+    id,
+    label,
+    value,
+    type: opts.type || 'number',
+    min: opts.min,
+    max: opts.max,
+    step: opts.step || 'any',
+    suffix: opts.suffix || '',
+    options: opts.options || null
+});
+
+const calculators = [
+    {
+        id: 'sip', group: 'Mutual Funds', name: 'SIP Calculator', icon: 'fa-chart-line',
+        description: 'Estimate maturity value from a fixed monthly SIP.',
+        inputs: [input('monthly', 'Monthly investment', 5000, { min: 0, suffix: 'Rs.' }), input('rate', 'Expected return', 12, { suffix: '%' }), input('years', 'Investment period', 10, { min: 1, suffix: 'Years' })],
+        calculate: v => {
+            const n = v.years * 12, r = monthlyRate(v.rate);
+            const invested = v.monthly * n;
+            const maturity = r === 0 ? invested : v.monthly * (((pow(1 + r, n) - 1) / r) * (1 + r));
+            return investmentResult(invested, maturity);
+        }
+    },
+    {
+        id: 'lumpsum', group: 'Mutual Funds', name: 'Lumpsum Calculator', icon: 'fa-sack-dollar',
+        description: 'Calculate maturity value for one-time investment.',
+        inputs: [input('amount', 'Investment amount', 100000, { min: 0, suffix: 'Rs.' }), input('rate', 'Expected return', 12, { suffix: '%' }), input('years', 'Investment period', 10, { min: 1, suffix: 'Years' })],
+        calculate: v => investmentResult(v.amount, v.amount * pow(1 + annualRate(v.rate), v.years))
+    },
+    {
+        id: 'swp', group: 'Mutual Funds', name: 'SWP Calculator', icon: 'fa-hand-holding-dollar',
+        description: 'Estimate final corpus after systematic withdrawals.',
+        inputs: [input('corpus', 'Initial corpus', 1000000, { suffix: 'Rs.' }), input('withdrawal', 'Monthly withdrawal', 10000, { suffix: 'Rs.' }), input('rate', 'Expected return', 8, { suffix: '%' }), input('years', 'Withdrawal period', 10, { suffix: 'Years' })],
+        calculate: v => {
+            let balance = v.corpus;
+            const r = monthlyRate(v.rate);
+            const months = v.years * 12;
+            for (let i = 0; i < months; i++) balance = Math.max(0, balance * (1 + r) - v.withdrawal);
+            const totalWithdrawn = v.withdrawal * months;
+            return {
+                results: [
+                    result('Final corpus', fmtMoney(balance), true),
+                    result('Total withdrawn', fmtMoney(totalWithdrawn)),
+                    result('Initial corpus', fmtMoney(v.corpus)),
+                    result('Months', fmtNumber(months))
+                ],
+                chart: splitChart(['Withdrawn', 'Final Corpus'], [totalWithdrawn, balance])
+            };
+        }
+    },
+    {
+        id: 'mf', group: 'Mutual Funds', name: 'MF Calculator', icon: 'fa-chart-pie',
+        description: 'Combine lumpsum and monthly SIP mutual fund returns.',
+        inputs: [input('lumpsum', 'Lumpsum amount', 100000, { suffix: 'Rs.' }), input('monthly', 'Monthly SIP', 5000, { suffix: 'Rs.' }), input('rate', 'Expected return', 12, { suffix: '%' }), input('years', 'Investment period', 10, { suffix: 'Years' })],
+        calculate: v => {
+            const months = v.years * 12, r = monthlyRate(v.rate);
+            const sipValue = r === 0 ? v.monthly * months : v.monthly * (((pow(1 + r, months) - 1) / r) * (1 + r));
+            const lumpValue = v.lumpsum * pow(1 + annualRate(v.rate), v.years);
+            return investmentResult(v.lumpsum + v.monthly * months, sipValue + lumpValue);
+        }
+    },
+    {
+        id: 'step-up-sip', group: 'Mutual Funds', name: 'Step-Up SIP Calculator', icon: 'fa-arrow-trend-up',
+        description: 'Estimate SIP maturity with yearly SIP increase.',
+        inputs: [input('monthly', 'Starting monthly SIP', 5000, { suffix: 'Rs.' }), input('stepUp', 'Annual SIP increase', 10, { suffix: '%' }), input('rate', 'Expected return', 12, { suffix: '%' }), input('years', 'Investment period', 10, { suffix: 'Years' })],
+        calculate: v => {
+            let maturity = 0, invested = 0, sip = v.monthly;
+            const r = monthlyRate(v.rate);
+            for (let y = 0; y < v.years; y++) {
+                for (let m = 0; m < 12; m++) {
+                    maturity = (maturity + sip) * (1 + r);
+                    invested += sip;
+                }
+                sip *= 1 + annualRate(v.stepUp);
+            }
+            return investmentResult(invested, maturity);
+        }
+    },
+    {
+        id: 'emi', group: 'Loans', name: 'EMI Calculator', icon: 'fa-calculator',
+        description: 'Calculate EMI, total interest, and total payment.',
+        inputs: [input('principal', 'Loan amount', 1000000, { suffix: 'Rs.' }), input('rate', 'Annual interest rate', 8.5, { suffix: '%' }), input('months', 'Tenure', 240, { suffix: 'Months' })],
+        calculate: v => emiResult(v.principal, v.rate, v.months)
+    },
+    {
+        id: 'home-loan-emi', group: 'Loans', name: 'Home Loan EMI Calculator', icon: 'fa-house',
+        description: 'Home loan EMI with long tenure defaults.',
+        inputs: [input('principal', 'Home loan amount', 3000000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 8.5, { suffix: '%' }), input('years', 'Tenure', 20, { suffix: 'Years' })],
+        calculate: v => emiResult(v.principal, v.rate, v.years * 12)
+    },
+    {
+        id: 'car-loan-emi', group: 'Loans', name: 'Car Loan EMI Calculator', icon: 'fa-car',
+        description: 'Car loan EMI with shorter tenure defaults.',
+        inputs: [input('principal', 'Car loan amount', 800000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 9.5, { suffix: '%' }), input('years', 'Tenure', 5, { suffix: 'Years' })],
+        calculate: v => emiResult(v.principal, v.rate, v.years * 12)
+    },
+    {
+        id: 'flat-reducing', group: 'Loans', name: 'Flat vs Reducing Rate', icon: 'fa-scale-balanced',
+        description: 'Compare flat-rate EMI with reducing-balance EMI.',
+        inputs: [input('principal', 'Loan amount', 500000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 12, { suffix: '%' }), input('months', 'Tenure', 36, { suffix: 'Months' })],
+        calculate: v => {
+            const flatInterest = v.principal * annualRate(v.rate) * (v.months / 12);
+            const flatEmi = (v.principal + flatInterest) / v.months;
+            const reducing = emi(v.principal, v.rate, v.months);
+            return {
+                results: [
+                    result('Reducing EMI', fmtMoney(reducing), true),
+                    result('Flat EMI', fmtMoney(flatEmi)),
+                    result('Reducing total interest', fmtMoney(reducing * v.months - v.principal)),
+                    result('Flat total interest', fmtMoney(flatInterest))
+                ],
+                chart: barChart(['Reducing EMI', 'Flat EMI'], [reducing, flatEmi])
+            };
+        }
+    },
+    {
+        id: 'fd', group: 'Deposits', name: 'FD Calculator', icon: 'fa-building-columns',
+        description: 'Calculate fixed deposit maturity with compounding.',
+        inputs: [input('amount', 'Deposit amount', 100000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 7, { suffix: '%' }), input('years', 'Tenure', 5, { suffix: 'Years' }), input('frequency', 'Compounding per year', 4)],
+        calculate: v => {
+            const maturity = v.amount * pow(1 + annualRate(v.rate) / v.frequency, v.frequency * v.years);
+            return investmentResult(v.amount, maturity);
+        }
+    },
+    {
+        id: 'rd', group: 'Deposits', name: 'RD Calculator', icon: 'fa-piggy-bank',
+        description: 'Estimate recurring deposit maturity value.',
+        inputs: [input('monthly', 'Monthly deposit', 5000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 7, { suffix: '%' }), input('months', 'Tenure', 60, { suffix: 'Months' })],
+        calculate: v => {
+            let maturity = 0, r = monthlyRate(v.rate);
+            for (let i = 0; i < v.months; i++) maturity = (maturity + v.monthly) * (1 + r);
+            return investmentResult(v.monthly * v.months, maturity);
+        }
+    },
+    {
+        id: 'ppf', group: 'Government Schemes', name: 'PPF Calculator', icon: 'fa-landmark',
+        description: 'Estimate PPF maturity for yearly contributions.',
+        inputs: [input('yearly', 'Yearly investment', 150000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 7.1, { suffix: '%' }), input('years', 'Tenure', 15, { suffix: 'Years' })],
+        calculate: v => {
+            let balance = 0;
+            for (let i = 0; i < v.years; i++) balance = (balance + v.yearly) * (1 + annualRate(v.rate));
+            return investmentResult(v.yearly * v.years, balance);
+        }
+    },
+    {
+        id: 'ssy', group: 'Government Schemes', name: 'SSY Calculator', icon: 'fa-child-reaching',
+        description: 'Estimate Sukanya Samriddhi Yojana maturity.',
+        inputs: [input('yearly', 'Yearly investment', 50000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 8.2, { suffix: '%' }), input('depositYears', 'Deposit period', 15, { suffix: 'Years' }), input('maturityYears', 'Maturity period', 21, { suffix: 'Years' })],
+        calculate: v => {
+            let balance = 0, invested = 0;
+            for (let i = 0; i < v.maturityYears; i++) {
+                if (i < v.depositYears) { balance += v.yearly; invested += v.yearly; }
+                balance *= 1 + annualRate(v.rate);
+            }
+            return investmentResult(invested, balance);
+        }
+    },
+    {
+        id: 'epf', group: 'Government Schemes', name: 'EPF Calculator', icon: 'fa-briefcase',
+        description: 'Estimate EPF corpus from salary and contribution rates.',
+        inputs: [input('basic', 'Monthly basic salary', 50000, { suffix: 'Rs.' }), input('employeeRate', 'Employee contribution', 12, { suffix: '%' }), input('employerRate', 'Employer EPF contribution', 3.67, { suffix: '%' }), input('interest', 'EPF interest rate', 8.25, { suffix: '%' }), input('years', 'Service period', 20, { suffix: 'Years' })],
+        calculate: v => {
+            let balance = 0, invested = 0;
+            const monthlyContribution = v.basic * annualRate(v.employeeRate + v.employerRate);
+            for (let m = 1; m <= v.years * 12; m++) {
+                balance += monthlyContribution;
+                invested += monthlyContribution;
+                if (m % 12 === 0) balance *= 1 + annualRate(v.interest);
+            }
+            return investmentResult(invested, balance);
+        }
+    },
+    {
+        id: 'nps', group: 'Government Schemes', name: 'NPS Calculator', icon: 'fa-user-shield',
+        description: 'Estimate NPS corpus, annuity, and pension.',
+        inputs: [input('monthly', 'Monthly contribution', 5000, { suffix: 'Rs.' }), input('rate', 'Expected return', 10, { suffix: '%' }), input('years', 'Investment period', 25, { suffix: 'Years' }), input('annuityPercent', 'Annuity purchase', 40, { suffix: '%' }), input('annuityRate', 'Annuity return', 6, { suffix: '%' })],
+        calculate: v => {
+            const sip = calculators.find(c => c.id === 'sip').calculate({ monthly: v.monthly, rate: v.rate, years: v.years });
+            const corpus = sip.raw.maturity;
+            const annuity = corpus * annualRate(v.annuityPercent);
+            const lump = corpus - annuity;
+            return {
+                results: [result('Total corpus', fmtMoney(corpus), true), result('Lumpsum withdrawal', fmtMoney(lump)), result('Annuity amount', fmtMoney(annuity)), result('Monthly pension', fmtMoney(annuity * annualRate(v.annuityRate) / 12))],
+                chart: splitChart(['Lumpsum', 'Annuity'], [lump, annuity])
+            };
+        }
+    },
+    {
+        id: 'nsc', group: 'Government Schemes', name: 'NSC Calculator', icon: 'fa-certificate',
+        description: 'Calculate National Savings Certificate maturity.',
+        inputs: [input('amount', 'Investment amount', 100000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 7.7, { suffix: '%' }), input('years', 'Tenure', 5, { suffix: 'Years' })],
+        calculate: v => investmentResult(v.amount, v.amount * pow(1 + annualRate(v.rate), v.years))
+    },
+    {
+        id: 'apy', group: 'Government Schemes', name: 'APY Calculator', icon: 'fa-person-cane',
+        description: 'Estimate rough monthly contribution for Atal Pension Yojana style target.',
+        inputs: [input('age', 'Current age', 30), input('pension', 'Target monthly pension', 5000, { suffix: 'Rs.' }), input('returnRate', 'Accumulation return', 8, { suffix: '%' }), input('annuityRate', 'Retirement annuity rate', 6, { suffix: '%' })],
+        calculate: v => {
+            const years = Math.max(0, 60 - v.age);
+            const corpusNeeded = v.pension * 12 / annualRate(v.annuityRate);
+            const r = monthlyRate(v.returnRate), n = years * 12;
+            const monthly = r === 0 ? corpusNeeded / n : corpusNeeded * r / (pow(1 + r, n) - 1);
+            return { results: [result('Estimated monthly contribution', fmtMoney(monthly), true), result('Corpus needed', fmtMoney(corpusNeeded)), result('Years to invest', fmtNumber(years)), result('Target pension', fmtMoney(v.pension))], chart: barChart(['Monthly Contribution', 'Target Pension'], [monthly, v.pension]) };
+        }
+    },
+    {
+        id: 'scss', group: 'Government Schemes', name: 'SCSS Calculator', icon: 'fa-user-clock',
+        description: 'Estimate Senior Citizens Savings Scheme quarterly payout.',
+        inputs: [input('amount', 'Investment amount', 1000000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 8.2, { suffix: '%' }), input('years', 'Tenure', 5, { suffix: 'Years' })],
+        calculate: v => {
+            const quarterly = v.amount * annualRate(v.rate) / 4;
+            const totalInterest = quarterly * v.years * 4;
+            return { results: [result('Quarterly payout', fmtMoney(quarterly), true), result('Total interest', fmtMoney(totalInterest)), result('Principal returned', fmtMoney(v.amount)), result('Total payout', fmtMoney(v.amount + totalInterest))], chart: splitChart(['Principal', 'Interest'], [v.amount, totalInterest]) };
+        }
+    },
+    {
+        id: 'mis', group: 'Government Schemes', name: 'Post Office MIS Calculator', icon: 'fa-envelope-open-text',
+        description: 'Calculate monthly income from Post Office MIS.',
+        inputs: [input('amount', 'Investment amount', 900000, { suffix: 'Rs.' }), input('rate', 'Interest rate', 7.4, { suffix: '%' }), input('years', 'Tenure', 5, { suffix: 'Years' })],
+        calculate: v => {
+            const monthly = v.amount * annualRate(v.rate) / 12;
+            return { results: [result('Monthly income', fmtMoney(monthly), true), result('Annual income', fmtMoney(monthly * 12)), result('Total interest', fmtMoney(monthly * 12 * v.years)), result('Principal', fmtMoney(v.amount))], chart: splitChart(['Principal', 'Interest'], [v.amount, monthly * 12 * v.years]) };
+        }
+    },
+    {
+        id: 'simple-interest', group: 'Returns', name: 'Simple Interest Calculator', icon: 'fa-percent',
+        description: 'Calculate simple interest.',
+        inputs: [input('principal', 'Principal', 100000, { suffix: 'Rs.' }), input('rate', 'Rate', 8, { suffix: '%' }), input('years', 'Time', 5, { suffix: 'Years' })],
+        calculate: v => investmentResult(v.principal, v.principal + v.principal * annualRate(v.rate) * v.years)
+    },
+    {
+        id: 'compound-interest', group: 'Returns', name: 'Compound Interest Calculator', icon: 'fa-chart-area',
+        description: 'Calculate compound interest with custom frequency.',
+        inputs: [input('principal', 'Principal', 100000, { suffix: 'Rs.' }), input('rate', 'Rate', 8, { suffix: '%' }), input('years', 'Time', 5, { suffix: 'Years' }), input('frequency', 'Compounding per year', 4)],
+        calculate: v => investmentResult(v.principal, v.principal * pow(1 + annualRate(v.rate) / v.frequency, v.frequency * v.years))
+    },
+    {
+        id: 'roi', group: 'Returns', name: 'ROI Calculator', icon: 'fa-arrow-up-right-dots',
+        description: 'Calculate return on investment.',
+        inputs: [input('initial', 'Initial value', 100000, { suffix: 'Rs.' }), input('finalValue', 'Final value', 150000, { suffix: 'Rs.' }), input('costs', 'Additional costs', 0, { suffix: 'Rs.' })],
+        calculate: v => {
+            const gain = v.finalValue - v.initial - v.costs;
+            const roi = v.initial === 0 ? 0 : gain / v.initial * 100;
+            return { results: [result('ROI', fmtPercent(roi), true), result('Net gain', fmtMoney(gain)), result('Initial value', fmtMoney(v.initial)), result('Final value', fmtMoney(v.finalValue))], chart: barChart(['Initial', 'Final'], [v.initial, v.finalValue]) };
+        }
+    },
+    {
+        id: 'cagr', group: 'Returns', name: 'CAGR Calculator', icon: 'fa-seedling',
+        description: 'Calculate compound annual growth rate.',
+        inputs: [input('initial', 'Initial value', 100000, { suffix: 'Rs.' }), input('finalValue', 'Final value', 200000, { suffix: 'Rs.' }), input('years', 'Period', 5, { suffix: 'Years' })],
+        calculate: v => {
+            const cagr = v.initial <= 0 || v.years <= 0 ? 0 : (pow(v.finalValue / v.initial, 1 / v.years) - 1) * 100;
+            return { results: [result('CAGR', fmtPercent(cagr), true), result('Absolute gain', fmtMoney(v.finalValue - v.initial)), result('Initial value', fmtMoney(v.initial)), result('Final value', fmtMoney(v.finalValue))], chart: barChart(['Initial', 'Final'], [v.initial, v.finalValue]) };
+        }
+    },
+    {
+        id: 'inflation', group: 'Returns', name: 'Inflation Calculator', icon: 'fa-money-bill-trend-up',
+        description: 'Calculate future cost after inflation.',
+        inputs: [input('cost', 'Current cost', 100000, { suffix: 'Rs.' }), input('inflation', 'Inflation rate', 6, { suffix: '%' }), input('years', 'Years', 10)],
+        calculate: v => investmentResult(v.cost, v.cost * pow(1 + annualRate(v.inflation), v.years), 'Current cost', 'Future cost')
+    },
+    {
+        id: 'retirement', group: 'Planning', name: 'Retirement Calculator', icon: 'fa-umbrella-beach',
+        description: 'Estimate retirement corpus and monthly saving need.',
+        inputs: [input('age', 'Current age', 30), input('retireAge', 'Retirement age', 60), input('monthlyExpense', 'Current monthly expense', 50000, { suffix: 'Rs.' }), input('inflation', 'Inflation', 6, { suffix: '%' }), input('returnRate', 'Pre-retirement return', 12, { suffix: '%' }), input('postReturn', 'Post-retirement return', 7, { suffix: '%' }), input('lifeExpectancy', 'Life expectancy', 85)],
+        calculate: v => {
+            const yearsToRetire = Math.max(0, v.retireAge - v.age);
+            const retirementYears = Math.max(1, v.lifeExpectancy - v.retireAge);
+            const monthlyAtRetire = v.monthlyExpense * pow(1 + annualRate(v.inflation), yearsToRetire);
+            const realRate = ((1 + annualRate(v.postReturn)) / (1 + annualRate(v.inflation))) - 1;
+            const corpus = realRate === 0 ? monthlyAtRetire * 12 * retirementYears : monthlyAtRetire * 12 * (1 - pow(1 + realRate, -retirementYears)) / realRate;
+            const r = monthlyRate(v.returnRate), n = yearsToRetire * 12;
+            const monthlySaving = r === 0 ? corpus / n : corpus * r / (pow(1 + r, n) - 1);
+            return { results: [result('Required corpus', fmtMoney(corpus), true), result('Monthly saving needed', fmtMoney(monthlySaving)), result('Monthly expense at retirement', fmtMoney(monthlyAtRetire)), result('Years to retirement', fmtNumber(yearsToRetire))], chart: barChart(['Monthly Saving', 'Future Monthly Expense'], [monthlySaving, monthlyAtRetire]) };
+        }
+    },
+    {
+        id: 'hra', group: 'Tax', name: 'HRA Calculator', icon: 'fa-house-user',
+        description: 'Estimate exempt HRA under common salary rules.',
+        inputs: [input('basic', 'Basic salary yearly', 600000, { suffix: 'Rs.' }), input('hra', 'HRA received yearly', 240000, { suffix: 'Rs.' }), input('rent', 'Rent paid yearly', 300000, { suffix: 'Rs.' }), input('metro', 'City type', 'metro', { type: 'select', options: [{ value: 'metro', label: 'Metro' }, { value: 'nonMetro', label: 'Non-metro' }] })],
+        calculate: v => {
+            const salaryFactor = v.metro === 'metro' ? 0.5 : 0.4;
+            const exempt = Math.max(0, Math.min(v.hra, v.rent - 0.1 * v.basic, salaryFactor * v.basic));
+            return { results: [result('HRA exemption', fmtMoney(exempt), true), result('Taxable HRA', fmtMoney(Math.max(0, v.hra - exempt))), result('HRA received', fmtMoney(v.hra)), result('Rent paid', fmtMoney(v.rent))], chart: splitChart(['Exempt', 'Taxable'], [exempt, Math.max(0, v.hra - exempt)]) };
+        }
+    },
+    {
+        id: 'income-tax', group: 'Tax', name: 'Income Tax Calculator', icon: 'fa-file-invoice-dollar',
+        description: 'Simplified individual income tax estimator with editable deductions.',
+        inputs: [input('income', 'Annual taxable income before deductions', 1200000, { suffix: 'Rs.' }), input('deductions', 'Deductions', 75000, { suffix: 'Rs.' }), input('regime', 'Tax regime', 'new', { type: 'select', options: [{ value: 'new', label: 'New regime' }, { value: 'old', label: 'Old regime' }] })],
+        calculate: v => taxResult(v)
+    },
+    {
+        id: 'tds', group: 'Tax', name: 'TDS Calculator', icon: 'fa-receipt',
+        description: 'Calculate tax deducted at source from amount and rate.',
+        inputs: [input('amount', 'Payment amount', 100000, { suffix: 'Rs.' }), input('rate', 'TDS rate', 10, { suffix: '%' })],
+        calculate: v => ({ results: [result('TDS amount', fmtMoney(v.amount * annualRate(v.rate)), true), result('Net payable', fmtMoney(v.amount * (1 - annualRate(v.rate)))), result('Gross amount', fmtMoney(v.amount)), result('TDS rate', fmtPercent(v.rate))], chart: splitChart(['Net Payable', 'TDS'], [v.amount * (1 - annualRate(v.rate)), v.amount * annualRate(v.rate)]) })
+    },
+    {
+        id: 'gst', group: 'Tax', name: 'GST Calculator', icon: 'fa-file-circle-check',
+        description: 'Add or remove GST from an amount.',
+        inputs: [input('amount', 'Amount', 10000, { suffix: 'Rs.' }), input('rate', 'GST rate', 18, { suffix: '%' }), input('mode', 'Calculation mode', 'add', { type: 'select', options: [{ value: 'add', label: 'Add GST' }, { value: 'remove', label: 'Remove GST' }] })],
+        calculate: v => {
+            const gst = v.mode === 'add' ? v.amount * annualRate(v.rate) : v.amount - (v.amount / (1 + annualRate(v.rate)));
+            const base = v.mode === 'add' ? v.amount : v.amount - gst;
+            const total = v.mode === 'add' ? v.amount + gst : v.amount;
+            return { results: [result('Total amount', fmtMoney(total), true), result('GST amount', fmtMoney(gst)), result('Base amount', fmtMoney(base)), result('CGST + SGST', fmtMoney(gst / 2) + ' each')], chart: splitChart(['Base', 'GST'], [base, gst]) };
+        }
+    },
+    {
+        id: 'salary', group: 'Tax', name: 'Salary Calculator', icon: 'fa-wallet',
+        description: 'Estimate take-home salary after common monthly deductions.',
+        inputs: [input('ctc', 'Annual CTC', 1200000, { suffix: 'Rs.' }), input('bonus', 'Annual bonus/variable', 100000, { suffix: 'Rs.' }), input('pf', 'Monthly PF', 1800, { suffix: 'Rs.' }), input('professionalTax', 'Monthly professional tax', 200, { suffix: 'Rs.' }), input('incomeTax', 'Monthly income tax/TDS', 10000, { suffix: 'Rs.' })],
+        calculate: v => {
+            const monthlyGross = (v.ctc - v.bonus) / 12;
+            const deductions = v.pf + v.professionalTax + v.incomeTax;
+            return { results: [result('Monthly take-home', fmtMoney(monthlyGross - deductions), true), result('Monthly gross', fmtMoney(monthlyGross)), result('Monthly deductions', fmtMoney(deductions)), result('Annual take-home', fmtMoney((monthlyGross - deductions) * 12 + v.bonus))], chart: splitChart(['Take-home', 'Deductions'], [monthlyGross - deductions, deductions]) };
+        }
+    },
+    {
+        id: 'gratuity', group: 'Tax', name: 'Gratuity Calculator', icon: 'fa-award',
+        description: 'Estimate gratuity using 15/26 salary formula.',
+        inputs: [input('salary', 'Last drawn basic + DA monthly', 60000, { suffix: 'Rs.' }), input('years', 'Completed years of service', 10)],
+        calculate: v => ({ results: [result('Estimated gratuity', fmtMoney(v.salary * 15 / 26 * v.years), true), result('Monthly salary used', fmtMoney(v.salary)), result('Service years', fmtNumber(v.years)), result('Formula', 'Salary x 15/26 x years')], chart: barChart(['Gratuity'], [v.salary * 15 / 26 * v.years]) })
+    },
+    {
+        id: 'brokerage', group: 'Stocks', name: 'Brokerage Calculator', icon: 'fa-money-check-dollar',
+        description: 'Estimate brokerage and common trade charges.',
+        inputs: [input('buy', 'Buy value', 100000, { suffix: 'Rs.' }), input('sell', 'Sell value', 110000, { suffix: 'Rs.' }), input('brokerageRate', 'Brokerage rate', 0.03, { suffix: '%' }), input('maxBrokerage', 'Max brokerage per order', 20, { suffix: 'Rs.' }), input('otherChargesRate', 'Other charges rate', 0.12, { suffix: '%' })],
+        calculate: v => {
+            const turnover = v.buy + v.sell;
+            const brokerage = Math.min(v.buy * annualRate(v.brokerageRate), v.maxBrokerage) + Math.min(v.sell * annualRate(v.brokerageRate), v.maxBrokerage);
+            const other = turnover * annualRate(v.otherChargesRate);
+            const profit = v.sell - v.buy - brokerage - other;
+            return { results: [result('Net P&L', fmtMoney(profit), true), result('Brokerage', fmtMoney(brokerage)), result('Other charges', fmtMoney(other)), result('Turnover', fmtMoney(turnover))], chart: splitChart(['Net P&L', 'Charges'], [Math.max(0, profit), brokerage + other]) };
+        }
+    },
+    {
+        id: 'margin', group: 'Stocks', name: 'Margin Calculator', icon: 'fa-layer-group',
+        description: 'Estimate margin needed from order value and margin percent.',
+        inputs: [input('price', 'Share price', 500, { suffix: 'Rs.' }), input('quantity', 'Quantity', 100), input('margin', 'Required margin', 20, { suffix: '%' })],
+        calculate: v => {
+            const order = v.price * v.quantity, margin = order * annualRate(v.margin);
+            return { results: [result('Margin required', fmtMoney(margin), true), result('Order value', fmtMoney(order)), result('Leverage', fmtNumber(order / Math.max(1, margin)) + 'x'), result('Quantity', fmtNumber(v.quantity))], chart: splitChart(['Margin', 'Funded Value'], [margin, order - margin]) };
+        }
+    },
+    {
+        id: 'stock-average', group: 'Stocks', name: 'Stock Average Calculator', icon: 'fa-chart-simple',
+        description: 'Calculate average stock price after second purchase.',
+        inputs: [input('qty1', 'First quantity', 100), input('price1', 'First price', 250, { suffix: 'Rs.' }), input('qty2', 'Second quantity', 50), input('price2', 'Second price', 200, { suffix: 'Rs.' })],
+        calculate: v => {
+            const totalQty = v.qty1 + v.qty2, totalCost = v.qty1 * v.price1 + v.qty2 * v.price2;
+            return { results: [result('Average price', fmtMoney(totalCost / totalQty), true), result('Total quantity', fmtNumber(totalQty)), result('Total cost', fmtMoney(totalCost)), result('Second buy value', fmtMoney(v.qty2 * v.price2))], chart: barChart(['First Price', 'Second Price', 'Average'], [v.price1, v.price2, totalCost / totalQty]) };
+        }
+    },
+    {
+        id: 'xirr', group: 'Stocks', name: 'XIRR Calculator', icon: 'fa-timeline',
+        description: 'Approximate annualized return from starting value, ending value, and cash flows.',
+        inputs: [input('startValue', 'Starting value', 100000, { suffix: 'Rs.' }), input('cashFlows', 'Net additional investments', 50000, { suffix: 'Rs.' }), input('endValue', 'Ending value', 200000, { suffix: 'Rs.' }), input('years', 'Holding period', 3, { suffix: 'Years' })],
+        calculate: v => {
+            const invested = v.startValue + v.cashFlows;
+            const xirr = invested <= 0 || v.years <= 0 ? 0 : (pow(v.endValue / invested, 1 / v.years) - 1) * 100;
+            return { results: [result('Approx. XIRR', fmtPercent(xirr), true), result('Invested value', fmtMoney(invested)), result('Ending value', fmtMoney(v.endValue)), result('Gain', fmtMoney(v.endValue - invested))], chart: barChart(['Invested', 'Ending'], [invested, v.endValue]) };
+        }
+    }
+];
+
+function result(label, value, main = false) {
+    return { label, value, main };
+}
+
+function splitChart(labels, data) {
+    return { type: 'doughnut', labels, data };
+}
+
+function barChart(labels, data) {
+    return { type: 'bar', labels, data };
+}
+
+function investmentResult(invested, maturity, investedLabel = 'Invested amount', maturityLabel = 'Maturity value') {
+    const returns = maturity - invested;
+    return {
+        raw: { invested, maturity, returns },
+        results: [
+            result(maturityLabel, fmtMoney(maturity), true),
+            result(investedLabel, fmtMoney(invested)),
+            result('Estimated returns', fmtMoney(returns)),
+            result('Return ratio', invested === 0 ? '0%' : fmtPercent(returns / invested * 100))
+        ],
+        chart: splitChart([investedLabel, 'Returns'], [invested, Math.max(0, returns)])
+    };
+}
+
+function emi(principal, rate, months) {
+    const r = monthlyRate(rate);
+    if (months <= 0) return 0;
+    if (r === 0) return principal / months;
+    const factor = pow(1 + r, months);
+    return principal * r * factor / (factor - 1);
+}
+
+function emiResult(principal, rate, months) {
+    const monthlyEmi = emi(principal, rate, months);
+    const totalPayment = monthlyEmi * months;
+    const interest = totalPayment - principal;
+    return {
+        results: [
+            result('Monthly EMI', fmtMoney(monthlyEmi), true),
+            result('Principal', fmtMoney(principal)),
+            result('Total interest', fmtMoney(interest)),
+            result('Total payment', fmtMoney(totalPayment))
+        ],
+        chart: splitChart(['Principal', 'Interest'], [principal, Math.max(0, interest)])
+    };
+}
+
+function taxResult(v) {
+    const taxable = Math.max(0, v.income - v.deductions);
+    const slabs = v.regime === 'new'
+        ? [[300000, 0], [300000, 5], [300000, 10], [300000, 15], [300000, 20], [Infinity, 30]]
+        : [[250000, 0], [250000, 5], [500000, 20], [Infinity, 30]];
+    let remaining = taxable, tax = 0;
+    slabs.forEach(([limit, rate]) => {
+        const amount = Math.min(remaining, limit);
+        if (amount > 0) tax += amount * annualRate(rate);
+        remaining -= amount;
+    });
+    const cess = tax * 0.04;
+    return {
+        results: [
+            result('Estimated tax', fmtMoney(tax + cess), true),
+            result('Taxable income', fmtMoney(taxable)),
+            result('Base tax', fmtMoney(tax)),
+            result('Health & education cess', fmtMoney(cess))
+        ],
+        chart: splitChart(['Net Income', 'Tax + Cess'], [Math.max(0, taxable - tax - cess), tax + cess])
+    };
+}
+
+function getActiveCalculator() {
+    return calculators.find(calc => calc.id === activeCalculatorId) || calculators[0];
+}
+
+function readValues(calc) {
+    const values = {};
+    calc.inputs.forEach(field => {
+        const element = document.getElementById('field_' + field.id);
+        values[field.id] = field.type === 'select' ? element.value : clean(element.value);
+    });
+    return values;
+}
+
+function renderCalculatorList(filter = '') {
+    const container = document.getElementById('calculatorList');
+    const visible = calculators.filter(calc => {
+        const text = (calc.name + ' ' + calc.group + ' ' + calc.description).toLowerCase();
+        return text.includes(filter.toLowerCase());
+    });
+    const groups = [...new Set(visible.map(calc => calc.group))];
+    container.innerHTML = groups.map(group => {
+        const items = visible.filter(calc => calc.group === group).map(calc => `
+            <button type="button" class="calc-item ${calc.id === activeCalculatorId ? 'active' : ''}" data-id="${calc.id}">
+                <i class="fas ${calc.icon}"></i>
+                <span>${calc.name}</span>
+            </button>
+        `).join('');
+        return `<div class="calc-category-title">${group}</div>${items}`;
+    }).join('');
+
+    container.querySelectorAll('.calc-item').forEach(button => {
+        button.addEventListener('click', () => {
+            activeCalculatorId = button.dataset.id;
+            renderCalculatorList(document.getElementById('calculatorSearch').value);
+            renderActiveCalculator();
+        });
+    });
+}
+
+function renderActiveCalculator() {
+    const calc = getActiveCalculator();
+    document.getElementById('activeCalculatorName').textContent = calc.name;
+    document.getElementById('activeCalculatorDescription').textContent = calc.description;
+    document.getElementById('activeCalculatorBadge').textContent = calc.group;
+    document.getElementById('activeCalculatorIcon').className = 'fas ' + calc.icon + ' fs-4';
+
+    document.getElementById('calculatorForm').innerHTML = calc.inputs.map(field => {
+        if (field.type === 'select') {
+            return `
+                <div>
+                    <label class="form-label fw-semibold" for="field_${field.id}">${field.label}</label>
+                    <select id="field_${field.id}" class="form-select">
+                        ${field.options.map(option => `<option value="${option.value}" ${option.value === field.value ? 'selected' : ''}>${option.label}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+        }
+        return `
+            <div>
+                <label class="form-label fw-semibold" for="field_${field.id}">${field.label}${field.suffix ? ` (${field.suffix})` : ''}</label>
+                <input id="field_${field.id}" class="form-control" type="number" value="${field.value}" min="${field.min ?? ''}" max="${field.max ?? ''}" step="${field.step}">
+            </div>
+        `;
+    }).join('') + `
+        <button type="submit" class="btn btn-primary mt-2">
+            <i class="fas fa-calculator me-2"></i>Calculate
+        </button>
+    `;
+
+    document.getElementById('calculatorForm').onsubmit = event => {
+        event.preventDefault();
+        calculateActive();
+    };
+
+    document.querySelectorAll('#calculatorForm input, #calculatorForm select').forEach(element => {
+        element.addEventListener('input', calculateActive);
+        element.addEventListener('change', calculateActive);
+    });
+
+    calculateActive();
+}
+
+function calculateActive() {
+    const calc = getActiveCalculator();
+    const output = calc.calculate(readValues(calc));
+    const resultContainer = document.getElementById('calculatorResults');
+    resultContainer.innerHTML = output.results.map(item => `
+        <div class="calc-result-card ${item.main ? 'calc-main-value' : ''}">
+            <div class="calc-result-label">${item.label}</div>
+            <div class="calc-result-value">${item.value}</div>
+        </div>
+    `).join('');
+
+    document.getElementById('calculatorNote').textContent = 'Calculator values are estimates. For tax, regulatory, or scheme-specific decisions, verify current official rates before filing or investing.';
+    renderChart(output.chart);
+}
+
+function renderChart(chart) {
+    const ctx = document.getElementById('calculatorChart');
+    if (typeof Chart === 'undefined') {
+        if (ctx) {
+            const wrapper = ctx.closest('.calc-chart-wrap');
+            if (wrapper) {
+                wrapper.innerHTML = '<div class="h-100 d-flex align-items-center justify-content-center text-muted small border rounded">Chart preview unavailable. Calculations are ready above.</div>';
+            }
+        }
+        return;
+    }
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+        type: chart.type,
+        data: {
+            labels: chart.labels,
+            datasets: [{
+                data: chart.data,
+                backgroundColor: ['#238b69', '#59c9a5', '#1a73e8', '#f57c00', '#7b1fa2', '#d9534f'],
+                borderColor: '#fff',
+                borderWidth: chart.type === 'doughnut' ? 3 : 1,
+                borderRadius: chart.type === 'bar' ? 8 : 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: chart.type === 'doughnut' ? '62%' : undefined,
+            plugins: {
+                legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtMoney(ctx.parsed.y ?? ctx.parsed)}` } }
+            },
+            scales: chart.type === 'bar'
+                ? { y: { beginAtZero: true, ticks: { callback: value => fmtMoney(value) } }, x: { grid: { display: false } } }
+                : {}
+        }
+    });
+}
+
+document.getElementById('calculatorSearch').addEventListener('input', event => {
+    renderCalculatorList(event.target.value);
+});
+
+renderCalculatorList();
+renderActiveCalculator();
+</script>
+</th:block>
+</html>

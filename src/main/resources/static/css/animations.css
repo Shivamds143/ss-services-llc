@@ -1,0 +1,181 @@
+@charset "UTF-8";
+/* =============================================================
+   Financial CRM — Premium Animation Layer
+   Load this AFTER app.css (and after any page-specific extraCss)
+   so it can safely enhance/override the base styles.
+   ============================================================= */
+
+/* ── 0. Respect reduced-motion preference ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── 12. Smooth scroll + premium scrollbar ──────────────────── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 76px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold, var(--primary, #1a73e8)) transparent;
+}
+*::-webkit-scrollbar { width: 7px; height: 7px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--gold, var(--primary, #1a73e8));
+  border-radius: 10px;
+  opacity: 0.6;
+}
+*::-webkit-scrollbar-thumb:hover { opacity: 1; }
+
+/* ── 1. Page load fade-in / slide-up utility ────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-slide-up {
+  animation: fadeSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── 11. Page loader ─────────────────────────────────────────── */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(255,255,255,0.97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.page-loader.loader-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.page-loader .loader-icon {
+  font-size: 2.2rem;
+  color: var(--gold, var(--primary, #1a73e8));
+}
+.page-loader .loader-brand {
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--maroon-dark, #344054);
+  font-size: 0.95rem;
+}
+
+.skeleton-line,
+.skeleton-circle,
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+  background: #e9ecef;
+  border-radius: 6px;
+}
+.skeleton-line { height: 14px; margin-bottom: 8px; width: 100%; }
+.skeleton-circle { border-radius: 50%; width: 44px; height: 44px; }
+.skeleton-card { height: 110px; border-radius: 14px; }
+.skeleton-line::after,
+.skeleton-circle::after,
+.skeleton-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeletonShimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* ── 2. Card: lift on hover + scale 1.03 ─────────────────────── */
+.card {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.03) !important;
+  box-shadow: 0 16px 32px -8px rgba(0,0,0,0.16) !important;
+}
+.kpi-card:hover {
+  transform: translateY(-6px) scale(1.03) !important;
+}
+
+/* ── 3. Button: ripple + smooth glow ─────────────────────────── */
+.btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 8px 20px -6px var(--gold, var(--primary, #1a73e8));
+}
+.btn:active { transform: translateY(0) scale(0.97); }
+
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.16);
+  mix-blend-mode: overlay;
+  transform: scale(0);
+  pointer-events: none;
+  animation: btnRippleAnim 0.6s ease-out;
+  z-index: 0;
+}
+@keyframes btnRippleAnim {
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* ── 4. Sidebar: smooth expand/collapse ──────────────────────── */
+#sidebar-wrapper {
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#page-content-wrapper {
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#sidebarToggle i { display: inline-block; transition: transform .3s ease; }
+
+/* ── 5. Navbar: blur on scroll ────────────────────────────────── */
+.navbar {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+}
+.navbar.navbar-scrolled {
+  background-color: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+/* ── 9. Modal: scale + fade ──────────────────────────────────── */
+.modal.fade .modal-dialog {
+  transform: scale(0.92) translateY(-12px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+.modal.show .modal-dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* ── 10. Notification pulse ──────────────────────────────────── */
+.notif-badge {
+  box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.55);
+}
+#toastContainer .toast { margin-top: 8px; }
+
+/* ── Misc polish ──────────────────────────────────────────────── */
+::selection {
+  background: var(--gold, var(--primary, #1a73e8));
+  color: #fff;
+}

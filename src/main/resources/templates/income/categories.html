@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, ~{}, 'income-categories', 'Income Categories')}">
+
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+    <h5 class="fw-bold mb-0">
+        <i class="fas fa-tags text-success me-2"></i>Income Category Master
+    </h5>
+    <sec:authorize access="hasRole('ADMIN')">
+    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="fas fa-plus me-1"></i>Add Category
+    </button>
+    </sec:authorize>
+</div>
+
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="catSearch" class="form-control" placeholder="Search categories..."/>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select id="groupFilter" class="form-select form-select-sm">
+                    <option value="">All Groups</option>
+                    <option th:each="g : ${categoryGroups}" th:value="${g}" th:text="${g}">Group</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="statusFilter" class="form-select form-select-sm">
+                    <option value="">All Status</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <span class="text-muted small" id="catCount"
+                      th:text="${#lists.size(categories)} + ' categories'">0 categories</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="categoryTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Category Name</th>
+                        <th>Group</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <sec:authorize access="hasRole('ADMIN')">
+                        <th>Actions</th>
+                        </sec:authorize>
+                    </tr>
+                </thead>
+                <tbody id="categoryTableBody">
+                    <tr th:each="c, i : ${categories}"
+                        th:attr="data-name=${c.categoryName?.toLowerCase()},
+                                 data-group=${c.categoryGroup?.toLowerCase()},
+                                 data-status=${c.active}">
+                        <td class="text-muted small" th:text="${i.index + 1}"></td>
+                        <td class="fw-semibold small" th:text="${c.categoryName}">-</td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                                  th:text="${c.categoryGroup}">-</span>
+                        </td>
+                        <td class="small text-muted" style="max-width:250px;white-space:normal;"
+                            th:text="${c.description ?: '-'}">-</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${c.active} ? 'bg-success' : 'bg-secondary'"
+                                  th:text="${c.active} ? 'Active' : 'Inactive'">-</span>
+                        </td>
+                        <td class="small text-muted"
+                            th:text="${c.createdAt != null} ? ${#temporals.format(c.createdAt,'dd-MM-yyyy')} : '-'">-</td>
+                        <sec:authorize access="hasRole('ADMIN')">
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-warning"
+                                        th:data-id="${c.id}"
+                                        th:data-name="${c.categoryName}"
+                                        th:data-group="${c.categoryGroup}"
+                                        th:data-desc="${c.description}"
+                                        th:data-active="${c.active}"
+                                        onclick="openEditModal(this)"
+                                        title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form th:action="@{/income-categories/{id}/toggle(id=${c.id})}" method="post"
+                                      style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-sm"
+                                            th:classappend="${c.active} ? 'btn-outline-secondary' : 'btn-outline-success'"
+                                            th:title="${c.active} ? 'Deactivate' : 'Activate'">
+                                        <i class="fas" th:classappend="${c.active} ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        </sec:authorize>
+                    </tr>
+                    <tr th:if="${categories == null or #lists.isEmpty(categories)}" id="noDataRow">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-tags fs-2 mb-2 d-block"></i>
+                            No categories found. <a href="#" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add one.</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ─── ADD CATEGORY MODAL ─────────────────────── -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/income-categories/save}" method="post" id="addCatForm" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Income Category</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" name="categoryName" class="form-control" required
+                               placeholder="e.g. Consultation Fee" maxlength="150"/>
+                        <div class="invalid-feedback">Category name is required.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Group <span class="text-danger">*</span></label>
+                        <input type="text" name="categoryGroup" class="form-control" required
+                               list="groupDatalist" placeholder="e.g. Service Income, Other" maxlength="100"/>
+                        <datalist id="groupDatalist">
+                            <option th:each="g : ${categoryGroups}" th:value="${g}">Group</option>
+                        </datalist>
+                        <div class="form-text small text-muted">Group helps organize categories (type or select existing)</div>
+                        <div class="invalid-feedback">Category group is required.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="2"
+                                  placeholder="Brief description (optional)" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="active" value="true" class="form-check-input" id="addActive" checked/>
+                        <label class="form-check-label" for="addActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ─── EDIT CATEGORY MODAL ────────────────────── -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editCatForm" method="post" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" name="categoryName" id="editCatName" class="form-control" required maxlength="150"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Group <span class="text-danger">*</span></label>
+                        <input type="text" name="categoryGroup" id="editCatGroup" class="form-control"
+                               required list="groupDatalist" maxlength="100"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" id="editCatDesc" class="form-control" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="active" value="true" class="form-check-input" id="editActive"/>
+                        <label class="form-check-label" for="editActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-2"></i>Update Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script th:inline="javascript">
+/*<![CDATA[*/
+// Edit modal population
+function openEditModal(btn) {
+    const id    = btn.dataset.id;
+    const name  = btn.dataset.name;
+    const group = btn.dataset.group;
+    const desc  = btn.dataset.desc;
+    const active = btn.dataset.active === 'true';
+
+    document.getElementById('editCatName').value  = name;
+    document.getElementById('editCatGroup').value = group;
+    document.getElementById('editCatDesc').value  = desc || '';
+    document.getElementById('editActive').checked = active;
+    document.getElementById('editCatForm').action = '/income-categories/' + id + '/update';
+
+    const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    modal.show();
+}
+
+// Client-side search & filter
+const searchInput  = document.getElementById('catSearch');
+const groupFilter  = document.getElementById('groupFilter');
+const statusFilter = document.getElementById('statusFilter');
+const rows         = document.querySelectorAll('#categoryTableBody tr[data-name]');
+const catCountEl   = document.getElementById('catCount');
+
+function filterTable() {
+    const q      = searchInput.value.toLowerCase();
+    const group  = groupFilter.value.toLowerCase();
+    const status = statusFilter.value;
+    let visible  = 0;
+    rows.forEach(row => {
+        const nameMatch  = row.dataset.name.includes(q) || row.dataset.group.includes(q);
+        const groupMatch = !group || row.dataset.group.includes(group);
+        const statMatch  = !status || row.dataset.status === status;
+        const show = nameMatch && groupMatch && statMatch;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    catCountEl.textContent = visible + ' categories';
+}
+
+searchInput.addEventListener('input', filterTable);
+groupFilter.addEventListener('change', filterTable);
+statusFilter.addEventListener('change', filterTable);
+
+// Form validation
+document.getElementById('addCatForm').addEventListener('submit', function(e) {
+    if (!this.checkValidity()) { e.preventDefault(); this.classList.add('was-validated'); }
+});
+document.getElementById('editCatForm').addEventListener('submit', function(e) {
+    if (!this.checkValidity()) { e.preventDefault(); this.classList.add('was-validated'); }
+});
+/*]]>*/
+</script>
+</th:block>
+</html>

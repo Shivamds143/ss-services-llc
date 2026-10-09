@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, null, 'appointments',
+                  ${appointment.id == null ? 'New Appointment' : 'Edit Appointment'})}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <h5 class="fw-bold" th:text="${appointment.id == null ? 'Schedule Appointment' : 'Edit Appointment'}">Schedule Appointment</h5>
+    <a th:href="@{/appointments}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:750px;">
+    <div class="card-header bg-info text-white py-3">
+        <h6 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Appointment Details</h6>
+    </div>
+    <div class="card-body p-4">
+        <form id="appointmentForm"
+              th:action="${appointment.id == null ? '/appointments/save' : '/appointments/' + appointment.id + '/update'}"
+              method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <!-- FIX: there used to be TWO hidden inputs both named "customerId" — one
+                 in the locked display (pre-filled) and one in the search box (always
+                 empty until a user actively searched). The submit-validation script
+                 always read the search box's (empty) copy, so whenever a customer was
+                 pre-selected/locked — e.g. opening "New Appointment" from a customer's
+                 or inquiry's page — the form reported "select a customer" and silently
+                 blocked the Schedule Appointment button, even though a customer WAS
+                 already chosen. There is now a single source of truth: one hidden
+                 #customerId field shared by both display modes. -->
+            <input type="hidden" name="customerId" id="customerId"
+                   th:value="${appointment.customer != null ? appointment.customer.id : ''}"/>
+
+            <div class="row g-3">
+
+                <!-- Customer: locked display when editing or pre-selected from an Inquiry -->
+                <div class="col-12" id="customerLockedBlock" th:if="${appointment.customer != null}">
+                    <label class="form-label fw-semibold">Customer</label>
+                    <div class="form-control bg-light d-flex align-items-center">
+                        <i class="fas fa-user-circle me-2 text-muted"></i>
+                        <strong th:text="${appointment.customer.customerName}"></strong>
+                        <span class="text-muted ms-2" th:text="${appointment.customer.mobileNumber}"></span>
+                        <a href="#" id="changeCustomerLink"
+                           class="ms-auto small text-decoration-none">Change</a>
+                    </div>
+                    <div class="form-text text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <span th:if="${appointment.inquiry != null}">Linked from inquiry — customer is locked for this appointment.</span>
+                        <span th:unless="${appointment.inquiry != null}">Customer for this appointment.</span>
+                    </div>
+                </div>
+
+                <!-- Customer: live search when creating standalone, or after clicking "Change" -->
+                <div class="col-12 position-relative" id="customerSearchBlock"
+                     th:style="${appointment.customer == null} ? '' : 'display:none;'">
+                    <label class="form-label fw-semibold">
+                        Customer <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="customerSearch" class="form-control border-start-0"
+                               placeholder="Search customer by name or mobile..."
+                               th:value="${appointment.customer != null ? appointment.customer.customerName : ''}"
+                               autocomplete="off"/>
+                        <span class="input-group-text bg-white d-none" id="customerSpinner">
+                            <span class="spinner-border spinner-border-sm text-info" role="status"></span>
+                        </span>
+                    </div>
+                    <div id="customerResults" class="list-group position-absolute w-100 z-3 shadow"
+                         style="display:none; max-height:240px; overflow-y:auto; top:100%; left:0;"></div>
+                    <div id="customerError" class="text-danger small mt-1" style="display:none;">
+                        <i class="fas fa-exclamation-circle me-1"></i>Please select a customer from search results.
+                    </div>
+                    <div class="form-text text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Type at least 2 letters of name or mobile number, then pick from the suggestions.
+                    </div>
+                </div>
+
+                <!-- Appointment Type -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        Appointment Type <span class="text-danger">*</span>
+                    </label>
+                    <select name="appointmentTypeStr" class="form-select" required>
+                        <option value="">-- Select Type --</option>
+                        <option th:each="t : ${appointmentTypes}"
+                                th:value="${t}"
+                                th:text="${t.name().replace('_',' ')}"
+                                th:selected="${appointment.appointmentType == t}">
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Assigned To -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Assigned To</label>
+                    <select name="assignedToId" class="form-select">
+                        <option value="">-- Assign To --</option>
+                        <option th:each="u : ${allUsers}"
+                                th:value="${u.id}"
+                                th:text="${u.fullName}"
+                                th:selected="${appointment.assignedTo != null
+                                               and appointment.assignedTo.id == u.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Date -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        Date <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" name="appointmentDate" class="form-control" required
+                           th:value="${appointment.appointmentDate ?: today}"/>
+                </div>
+
+                <!-- Time -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        Time <span class="text-danger">*</span>
+                    </label>
+                    <input type="time" name="appointmentTimeStr" class="form-control" required
+                           th:value="${appointment.appointmentTime}"/>
+                </div>
+
+                <!-- Duration -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Duration (minutes)</label>
+                    <select name="durationMinutes" class="form-select">
+                        <option value="15"  th:selected="${appointment.durationMinutes == 15}">15 minutes</option>
+                        <option value="30"  th:selected="${appointment.durationMinutes == null or appointment.durationMinutes == 30}">30 minutes</option>
+                        <option value="45"  th:selected="${appointment.durationMinutes == 45}">45 minutes</option>
+                        <option value="60"  th:selected="${appointment.durationMinutes == 60}">1 hour</option>
+                        <option value="90"  th:selected="${appointment.durationMinutes == 90}">1.5 hours</option>
+                        <option value="120" th:selected="${appointment.durationMinutes == 120}">2 hours</option>
+                    </select>
+                </div>
+
+                <!-- Location -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Location</label>
+                    <input type="text" name="location" class="form-control"
+                           placeholder="Meeting location"
+                           th:value="${appointment.location}"/>
+                </div>
+
+                <!-- Description -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Description</label>
+                    <textarea name="description" class="form-control" rows="2"
+                              placeholder="Purpose of appointment..."
+                              th:text="${appointment.description}"></textarea>
+                </div>
+
+                <!-- Notes -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Notes</label>
+                    <textarea name="notes" class="form-control" rows="2"
+                              placeholder="Additional notes..."
+                              th:text="${appointment.notes}"></textarea>
+                </div>
+
+            </div><!-- /row -->
+
+            <hr class="my-4"/>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-info text-white px-4">
+                    <i class="fas fa-save me-2"></i>
+                    <span th:text="${appointment.id == null ? 'Schedule Appointment' : 'Update Appointment'}">Schedule Appointment</span>
+                </button>
+                <a th:href="@{/appointments}" class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script>
+// ── Customer: "Change" link (locked → search mode) ────────────────
+const changeCustomerLink = document.getElementById('changeCustomerLink');
+if (changeCustomerLink) {
+    changeCustomerLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('customerSearchBlock').style.display = 'block';
+        document.getElementById('customerLockedBlock').style.display = 'none';
+        document.getElementById('customerId').value = '';
+        document.getElementById('customerSearch').value = '';
+        document.getElementById('customerSearch').focus();
+    });
+}
+
+// ── Customer live search ───────────────────────────────────────────
+const customerSearchEl = document.getElementById('customerSearch');
+if (customerSearchEl) {
+    let searchTimeout;
+    customerSearchEl.addEventListener('input', function () {
+        const q = this.value.trim();
+        document.getElementById('customerId').value = '';
+        document.getElementById('customerError').style.display = 'none';
+        this.classList.remove('is-invalid');
+
+        clearTimeout(searchTimeout);
+        if (q.length < 2) {
+            document.getElementById('customerResults').style.display = 'none';
+            document.getElementById('customerSpinner').classList.add('d-none');
+            return;
+        }
+        document.getElementById('customerSpinner').classList.remove('d-none');
+        searchTimeout = setTimeout(() => {
+            fetch('/api/customers/search?q=' + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('customerSpinner').classList.add('d-none');
+                    const box = document.getElementById('customerResults');
+                    box.innerHTML = '';
+                    if (data.length === 0) {
+                        box.innerHTML = '<div class="list-group-item text-muted small">No customers found</div>';
+                        box.style.display = 'block';
+                        return;
+                    }
+                    data.forEach(c => {
+                        const a = document.createElement('a');
+                        a.className = 'list-group-item list-group-item-action';
+                        a.innerHTML = `<strong>${c.customerName}</strong> <span class="text-muted small">${c.mobileNumber}</span>`;
+                        a.href = '#';
+                        a.addEventListener('click', ev => {
+                            ev.preventDefault();
+                            customerSearchEl.value = c.customerName;
+                            document.getElementById('customerId').value = c.id;
+                            document.getElementById('customerError').style.display = 'none';
+                            customerSearchEl.classList.remove('is-invalid');
+                            box.style.display = 'none';
+                        });
+                        box.appendChild(a);
+                    });
+                    box.style.display = 'block';
+                })
+                .catch(() => {
+                    document.getElementById('customerSpinner').classList.add('d-none');
+                });
+        }, 300);
+    });
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#customerSearch') && !e.target.closest('#customerResults')) {
+            const box = document.getElementById('customerResults');
+            if (box) box.style.display = 'none';
+        }
+    });
+}
+
+// ── Submit validation ──────────────────────────────────────────────
+const form = document.getElementById('appointmentForm');
+form.addEventListener('submit', function (e) {
+    let valid = true;
+    form.querySelectorAll('[required]').forEach(el => {
+        if (!el.value || el.value.trim() === '') {
+            el.classList.add('is-invalid');
+            valid = false;
+        } else {
+            el.classList.remove('is-invalid');
+        }
+    });
+
+    // FIX: only enforce the "pick from search results" rule when the search
+    // box is actually the active/visible way of choosing a customer. When a
+    // customer is locked (pre-selected from a Customer or Inquiry page), the
+    // shared #customerId field is already populated and must NOT be treated
+    // as missing just because the search box itself is empty/hidden.
+    const searchBlockVisible = document.getElementById('customerSearchBlock').style.display !== 'none';
+    const cid = document.getElementById('customerId').value;
+    if (searchBlockVisible && (!cid || cid.trim() === '')) {
+        document.getElementById('customerError').style.display = 'block';
+        if (customerSearchEl) customerSearchEl.classList.add('is-invalid');
+        valid = false;
+    } else if (!cid || cid.trim() === '') {
+        // Safety net: customer missing entirely, regardless of which block is shown
+        valid = false;
+        alert('Please select a customer before scheduling the appointment.');
+    }
+
+    if (!valid) {
+        e.preventDefault();
+    }
+});
+</script>
+</th:block>
+</html>

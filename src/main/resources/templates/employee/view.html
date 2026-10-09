@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'employees', 'Employee Details')}">
+<th:block th:fragment="content">
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <h5 class="fw-bold">Employee Details</h5>
+    <div class="d-flex gap-2">
+        <a th:href="@{/employees/{id}/edit(id=${employee.id})}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i>Edit
+        </a>
+        <a th:href="@{/attendance/employee/{id}(id=${employee.id})}" class="btn btn-info text-white">
+            <i class="fas fa-clipboard-check me-2"></i>Attendance
+        </a>
+        <a th:href="@{/employees}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back
+        </a>
+    </div>
+</div>
+
+<!-- Flash messages -->
+<div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-3">
+        <div class="card border-0 shadow-sm text-center p-4">
+            <img th:if="${employee.photoPath != null}"
+                 th:src="@{'/' + ${employee.photoPath}}"
+                 class="rounded-circle mx-auto mb-3 d-block"
+                 style="width:100px;height:100px;object-fit:cover;border:3px solid #e0e0e0;"/>
+            <div th:unless="${employee.photoPath != null}"
+                 class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center
+                        mx-auto mb-3 fw-bold"
+                 style="width:100px;height:100px;font-size:36px;">
+                <span th:text="${#strings.substring(employee.employeeName,0,1).toUpperCase()}"></span>
+            </div>
+            <h5 class="fw-bold mb-1" th:text="${employee.employeeName}"></h5>
+            <div class="text-muted small" th:text="${employee.designation ?: 'Employee'}"></div>
+            <div class="mt-2">
+                <span class="badge bg-secondary" th:text="${employee.employeeId}"></span>
+            </div>
+
+            <!-- Login Account Status badge -->
+            <div class="mt-3">
+                <span th:if="${employee.user != null}" class="badge bg-success fs-6">
+                    <i class="fas fa-link me-1"></i>Linked: <span th:text="${employee.user.username}"></span>
+                </span>
+                <span th:if="${employee.user == null}" class="badge bg-danger fs-6">
+                    <i class="fas fa-unlink me-1"></i>No Login Account
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-9">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-user me-2 text-primary"></i>Personal Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><span class="text-muted small d-block">Father's Name</span><span class="fw-semibold" th:text="${employee.fatherName ?: '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Mother's Name</span><span class="fw-semibold" th:text="${employee.motherName ?: '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Date of Birth</span><span class="fw-semibold" th:text="${employee.dateOfBirth != null ? #temporals.format(employee.dateOfBirth,'dd-MM-yyyy') : '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Gender</span><span class="fw-semibold" th:text="${employee.gender ?: '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Mobile</span><span class="fw-semibold" th:text="${employee.mobileNumber}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Email</span><span class="fw-semibold" th:text="${employee.email ?: '-'}"></span></div>
+                    <div class="col-12"><span class="text-muted small d-block">Address</span><span class="fw-semibold" th:text="${employee.address ?: '-'}"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-briefcase me-2 text-success"></i>Employment Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><span class="text-muted small d-block">Department</span><span class="fw-semibold" th:text="${employee.department ?: '-'}"></span></div>
+                   <div class="col-md-4"><span class="text-muted small d-block">Joining Date</span><span class="fw-semibold" th:text="${employee.joiningDate != null ? #temporals.format(employee.joiningDate,'dd-MM-yyyy') : '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Salary</span><span class="fw-semibold text-success" th:text="${employee.salary != null ? '₹' + #numbers.formatDecimal(employee.salary,0,'COMMA',0,'POINT') : '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">Bank</span><span class="fw-semibold" th:text="${employee.bankName ?: '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">IFSC</span><span class="fw-semibold" th:text="${employee.ifscCode ?: '-'}"></span></div>
+                    <div class="col-md-4"><span class="text-muted small d-block">PAN</span><span class="fw-semibold" th:text="${employee.panNumber ?: '-'}"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ADD: Link User Account Card ──────────────────────────────────── -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-user-shield me-2 text-warning"></i>Login Account (My Work Log Access)
+                </h6>
+                <!-- Unlink button — only show if currently linked -->
+                <form th:if="${employee.user != null}"
+                      th:action="@{/employees/{id}/unlink-user(id=${employee.id})}"
+                      method="post" class="d-inline"
+                      onsubmit="return confirm('Remove login access for this employee?')">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-unlink me-1"></i>Unlink User
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+
+                <!-- Currently linked — show info -->
+                <div th:if="${employee.user != null}" class="alert alert-success mb-3">
+                    <i class="fas fa-check-circle me-2"></i>
+                    This employee is linked to login account
+                    <strong th:text="${employee.user.fullName}"></strong>
+                    (<span class="text-muted" th:text="${employee.user.username}"></span>).
+                    They can use <strong>My Work Log</strong> to enter their daily work.
+                </div>
+
+                <!-- Not linked — show warning + link form -->
+                <div th:if="${employee.user == null}" class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No login account linked. This employee cannot use <strong>My Work Log</strong>
+                    until you link a user account below.
+                </div>
+
+                <form th:action="@{/employees/{id}/link-user(id=${employee.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">
+                                Select User Account to Link
+                                <span class="text-muted fw-normal">(user must already exist in User Management)</span>
+                            </label>
+                            <select name="userId" class="form-select" required>
+                                <option value="">-- Select a user account --</option>
+                                <option th:each="u : ${allUsers}"
+                                        th:value="${u.id}"
+                                        th:text="${u.fullName + ' (' + u.username + ')'}"
+                                        th:selected="${employee.user != null and employee.user.id == u.id}"
+                                        th:classappend="${u.isActive} ? '' : 'text-muted'">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="fas fa-link me-2"></i>
+                                <span th:text="${employee.user != null ? 'Change Linked User' : 'Link User Account'}"></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Once linked, this employee can log in and their <strong>My Work Log</strong>
+                        will show their personal work entries and targets.
+                        To create a new user first, go to
+                        <a th:href="@{/admin/users/new}" target="_blank">User Management → New User</a>.
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- ── END Link User Card ─────────────────────────────────────────────── -->
+    </div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="card border-0 shadow-sm mt-3" th:if="${!#lists.isEmpty(attendanceSummary)}">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-clipboard-check me-2 text-info"></i>
+            Attendance Summary – <span th:text="${currentMonth}"></span>
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+            <div th:each="s : ${attendanceSummary}"
+                 class="card border-0 bg-light text-center px-4 py-2" style="min-width:120px;">
+                <div class="fw-bold fs-4" th:text="${s[1]}">0</div>
+                <div class="text-muted small" th:text="${s[0].name().replace('_',' ')}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</th:block>
+</html>

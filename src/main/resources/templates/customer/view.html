@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'customers', 'Customer Details')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold text-dark">Customer Details</h5>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/customers}">Customers</a></li>
+            <li class="breadcrumb-item active" th:text="${customer.customerName}"></li>
+        </ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a th:href="@{/inquiries/new(customerId=${customer.id})}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>New Inquiry
+        </a>
+        <a th:href="@{/appointments/new(customerId=${customer.id})}" class="btn btn-info text-white">
+            <i class="fas fa-calendar-plus me-2"></i>Schedule
+        </a>
+        <a th:href="@{/customers/{id}/edit(id=${customer.id})}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i>Edit
+        </a>
+        <!-- FIX: page had no working Print action at all. Added a Print button
+             (same pattern used on income/view.html) wired to window.print(). The
+             existing @media print rules in app.css already hide the sidebar,
+             navbar and all .btn elements, so the printed page shows a clean
+             customer summary. -->
+        <button type="button" onclick="window.print()" class="btn btn-outline-secondary" id="printCustomerBtn">
+            <i class="fas fa-print me-2"></i>Print
+        </button>
+        <a th:href="@{/customers}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Customer Info Card -->
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center
+                             mx-auto mb-3 fw-bold fs-2" style="width:80px;height:80px;">
+                    <span th:text="${#strings.substring(customer.customerName,0,1).toUpperCase()}"></span>
+                </div>
+                <h5 class="fw-bold mb-1" th:text="${customer.customerName}"></h5>
+                <div class="text-muted mb-2" th:text="${customer.city ?: ''}"></div>
+                <span class="badge bg-success-subtle text-success px-3 py-2" th:if="${customer.isActive}">Active</span>
+                <span class="badge bg-danger-subtle text-danger px-3 py-2" th:unless="${customer.isActive}">Inactive</span>
+            </div>
+            <div class="card-body border-top pt-3">
+                <div class="mb-2">
+                    <span class="text-muted small">Mobile</span>
+                    <div class="fw-semibold" th:text="${customer.mobileNumber}"></div>
+                </div>
+                <div class="mb-2" th:if="${customer.alternateMobile}">
+                    <span class="text-muted small">Alternate</span>
+                    <div class="fw-semibold" th:text="${customer.alternateMobile}"></div>
+                </div>
+                <div class="mb-2" th:if="${customer.email}">
+                    <span class="text-muted small">Email</span>
+                    <div class="fw-semibold" th:text="${customer.email}"></div>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted small">Inquiry Date</span>
+                    <div class="fw-semibold" th:text="${#temporals.format(customer.inquiryDate, 'dd-MM-yyyy')}"></div>
+                </div>
+                <div class="mb-2" th:if="${customer.referenceName}">
+                    <span class="text-muted small">Reference</span>
+                    <div class="fw-semibold" th:text="${customer.referenceName}"></div>
+                </div>
+                <div class="mb-2" th:if="${customer.dateOfBirth}">
+                    <span class="text-muted small">Date of Birth</span>
+                    <div class="fw-semibold" th:text="${#temporals.format(customer.dateOfBirth, 'dd-MM-yyyy')}"></div>
+                </div>
+                <div class="mb-2" th:if="${customer.address}">
+                    <span class="text-muted small">Address</span>
+                    <div class="fw-semibold" th:text="${customer.address}"></div>
+                </div>
+            </div>
+            <!-- WhatsApp Quick Actions -->
+            <div class="card-footer bg-white">
+                <div class="d-flex gap-2">
+                    <a th:href="'https://wa.me/91' + ${customer.mobileNumber} + '?text=Hello%20' + ${customer.customerName}"
+                       target="_blank" class="btn btn-success btn-sm flex-fill">
+                        <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                    </a>
+                    <a th:href="'tel:' + ${customer.mobileNumber}" class="btn btn-primary btn-sm flex-fill">
+                        <i class="fas fa-phone me-1"></i>Call
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inquiries -->
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i>Inquiries</h6>
+                <a th:href="@{/inquiries/new(customerId=${customer.id})}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>New
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Date</th><th>Type</th><th>Amount</th><th>Bank</th><th>Status</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="inq : ${inquiries}">
+                                <td th:text="${#temporals.format(inq.inquiryDate, 'dd-MM-yyyy')}"></td>
+                                <td><span class="badge bg-primary-subtle text-primary" th:text="${inq.inquiryType.typeName}"></span></td>
+                                <td th:text="${inq.loanAmount != null ? '₹' + #numbers.formatDecimal(inq.loanAmount, 0, 'COMMA', 0, 'POINT') : '-'}"></td>
+                                <td th:text="${inq.bankName ?: '-'}"></td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${inq.status.name() == 'APPROVED'} ? 'bg-success' :
+                                                          (${inq.status.name() == 'REJECTED'} ? 'bg-danger' :
+                                                          (${inq.status.name() == 'NEW'} ? 'bg-info' : 'bg-warning text-dark'))"
+                                          th:text="${inq.status}"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/inquiries/{id}(id=${inq.id})}" class="btn btn-xs btn-outline-primary py-0 px-2">View</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(inquiries)}">
+                                <td colspan="6" class="text-center text-muted py-3">No inquiries yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</th:block>
+</html>

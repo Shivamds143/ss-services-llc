@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::section}, ~{}, ~{}, 'whatsapp', 'Email Notifications')}">
+<body>
+
+<section>
+    <div class="container-fluid">
+
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2><i class="fas fa-envelope-open-text text-danger"></i> Email Notifications</h2>
+                <p class="text-muted">Auto-send birthday and anniversary wishes via Email</p>
+            </div>
+        </div>
+
+        <!-- Success / Error Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${emailMessage}" class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-envelope"></i> <span th:text="${emailMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+
+            <!-- Birthday Email Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm" style="border-color:#7b2ff7;">
+                    <div class="card-header text-Black" style="background-color:#7b2ff7;">
+                        <h5 class="mb-0"><i class="fas fa-birthday-cake me-2"></i>Birthday Emails</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            The system automatically sends a styled birthday email every day at
+                            <strong>9:00 AM</strong> to all customers whose birthday is today.
+                        </p>
+                        <p>You can also trigger it manually right now:</p>
+                        <form th:action="@{/admin/emails/send-birthday-now}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn text-white w-100"
+                                    style="background-color:#7b2ff7;"
+                                    onclick="return confirm('Send birthday emails to all customers with birthday today?')">
+                                <i class="fas fa-paper-plane me-2"></i>Send Birthday Emails Now
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <i class="fas fa-clock me-1"></i>Auto-runs daily at 9:00 AM IST &middot; Duplicate-safe
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anniversary Email Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm" style="border-color:#e0578a;">
+                    <div class="card-header text-Black" style="background-color:#e0578a;">
+                        <h5 class="mb-0"><i class="fas fa-heart me-2"></i>Anniversary Emails</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            The system automatically sends a styled anniversary email every day at
+                            <strong>9:00 AM</strong> to all customers whose anniversary is today.
+                        </p>
+                        <p>You can also trigger it manually right now:</p>
+                        <form th:action="@{/admin/emails/send-anniversary-now}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn text-white w-100"
+                                    style="background-color:#e0578a;"
+                                    onclick="return confirm('Send anniversary emails to all customers with anniversary today?')">
+                                <i class="fas fa-paper-plane me-2"></i>Send Anniversary Emails Now
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <i class="fas fa-clock me-1"></i>Auto-runs daily at 9:00 AM IST &middot; Duplicate-safe
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

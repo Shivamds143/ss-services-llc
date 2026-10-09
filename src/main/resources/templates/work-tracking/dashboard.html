@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'work-tracking', 'Work Tracking')}">
+<th:block th:fragment="content">
+
+<style>
+    #workModal .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold">Employee Work Tracking</h5>
+        <p class="text-muted small mb-0" th:text="${#temporals.format(viewDate,'EEEE, dd MMMM yyyy')}"></p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <form th:action="@{/work-tracking}" method="get" class="d-flex flex-wrap gap-2 align-items-center">
+            <input type="hidden" name="search" th:value="${search}"/>
+            <input type="hidden" name="employeeId" th:value="${employeeId}"/>
+            <input type="hidden" name="status" th:value="${status}"/>
+            <input type="hidden" name="priority" th:value="${priority}"/>
+            <input type="hidden" name="sort" th:value="${sort}"/>
+            <input type="hidden" name="showDeleted" th:value="${showDeleted}"/>
+            <input type="hidden" name="size" th:value="${pageSize}"/>
+            <a th:href="@{/work-tracking(date=${viewDate.minusDays(1)},search=${search},employeeId=${employeeId},status=${status},priority=${priority},sort=${sort},showDeleted=${showDeleted},size=${pageSize})}"
+               class="btn btn-outline-secondary btn-sm">Previous</a>
+            <input type="date" name="date" class="form-control form-control-sm" th:value="${viewDate}" style="width:160px;"/>
+            <button class="btn btn-primary btn-sm">Go</button>
+            <a th:href="@{/work-tracking}" class="btn btn-outline-info btn-sm">Today</a>
+            <a th:href="@{/work-tracking(date=${viewDate.plusDays(1)},search=${search},employeeId=${employeeId},status=${status},priority=${priority},sort=${sort},showDeleted=${showDeleted},size=${pageSize})}"
+               class="btn btn-outline-secondary btn-sm">Next</a>
+        </form>
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#bulkAssignmentModal">
+            <i class="fas fa-layer-group me-1"></i>Bulk Assignment
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Present Today</div>
+                <div class="fs-3 fw-bold text-success" th:text="${presentCount}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Today's Assigned Work</div>
+                <div class="fs-3 fw-bold text-primary" th:text="${dashboardSummary.todayAssigned}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Pending Tasks</div>
+                <div class="fs-4 fw-bold text-secondary" th:text="${dashboardSummary.pending}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">In Progress</div>
+                <div class="fs-4 fw-bold text-warning" th:text="${dashboardSummary.inProgress}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Completed</div>
+                <div class="fs-4 fw-bold text-success" th:text="${dashboardSummary.completed}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Upcoming Work</div>
+                <div class="fs-3 fw-bold text-info" th:text="${dashboardSummary.upcoming}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Missed Work</div>
+                <div class="fs-3 fw-bold text-danger" th:text="${dashboardSummary.missed}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Overdue Status</div>
+                <div class="fs-3 fw-bold text-danger" th:text="${dashboardSummary.overdue}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Average Completion</div>
+                <div class="fs-3 fw-bold text-dark" th:text="${dashboardSummary.averageCompletion + '%'}">0%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2 text-primary"></i>Search And Filters</h6>
+    </div>
+    <div class="card-body">
+        <form th:action="@{/work-tracking}" method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="date" th:value="${viewDate}"/>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold">Search Work</label>
+                <input type="text" name="search" class="form-control" th:value="${search}"
+                       placeholder="Title, description, remarks, employee"/>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small fw-semibold">Filter By Employee</label>
+                <select name="employeeId" class="form-select">
+                    <option value="">All Employees</option>
+                    <option th:each="emp : ${allEmployees}" th:value="${emp.id}"
+                            th:text="${emp.employeeName}"
+                            th:selected="${employeeId == emp.id}"></option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small fw-semibold">Filter By Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option th:each="item : ${statuses}" th:value="${item}"
+                            th:text="${item.name().replace('_',' ')}"
+                            th:selected="${status == item}"></option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small fw-semibold">Filter By Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    <option th:each="item : ${priorities}" th:value="${item}"
+                            th:text="${item.name()}"
+                            th:selected="${priority == item}"></option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-4">
+                <label class="form-label small fw-semibold">Sort</label>
+                <select name="sort" class="form-select">
+                    <option value="latest" th:selected="${sort == 'latest'}">Latest</option>
+                    <option value="name" th:selected="${sort == 'name'}">Name</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-4">
+                <label class="form-label small fw-semibold">Page Size</label>
+                <select name="size" class="form-select">
+                    <option th:selected="${pageSize == 5}"  value="5">5</option>
+                    <option th:selected="${pageSize == 10}" value="10">10</option>
+                    <option th:selected="${pageSize == 15}" value="15">15</option>
+                    <option th:selected="${pageSize == 20}" value="20">20</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-4">
+                <div class="form-check mt-4 pt-2">
+                    <input class="form-check-input" type="checkbox" name="showDeleted" value="true"
+                           id="showDeleted" th:checked="${showDeleted}"/>
+                    <label class="form-check-label small fw-semibold" for="showDeleted">Deleted</label>
+                </div>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search me-1"></i>Apply
+                </button>
+                <a th:href="@{/work-tracking(date=${viewDate})}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Employee Cards -->
+<div class="row g-3 mb-4" th:if="${!#lists.isEmpty(employees)}">
+    <div class="col-xl-3 col-md-6" th:each="emp : ${employees}">
+        <th:block th:with="rec=${workRecordMap[emp.id]}">
+            <div class="card border-0 shadow-sm h-100"
+                 th:classappend="${rec != null and rec.workStatus != null} ?
+                    (${rec.workStatus.name() == 'COMPLETED'} ? ' border-start border-4 border-success' :
+                    (${rec.workStatus.name() == 'IN_PROGRESS'} ? ' border-start border-4 border-warning' :
+                    ' border-start border-4 border-secondary')) : ' border-start border-4 border-light'">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between gap-2 mb-2">
+                        <div>
+                            <div class="fw-semibold" th:text="${emp.employeeName}">Employee</div>
+                            <div class="text-muted small" th:text="${emp.designation ?: emp.employeeId}">Role</div>
+                        </div>
+                        <span class="badge rounded-pill"
+                              th:classappend="${rec == null} ? ' bg-light text-dark' :
+                                (${rec.workStatus.name() == 'COMPLETED'} ? ' bg-success' :
+                                (${rec.workStatus.name() == 'IN_PROGRESS'} ? ' bg-warning text-dark' : ' bg-secondary'))"
+                              th:text="${rec == null ? 'No Assignment' : rec.workStatus.name().replace('_',' ')}">Status</span>
+                    </div>
+                    <div class="small fw-semibold text-dark mb-1"
+                         th:text="${rec != null ? (rec.workTitle ?: 'Assigned Work') : 'No work assigned for selected date'}"></div>
+                    <div class="text-muted small mb-2"
+                         th:text="${rec != null ? #strings.abbreviate(rec.workDescription ?: rec.workSummary ?: '-', 70) : 'Use manual assignment or copy actions to create work for this day.'}"></div>
+                    <div class="d-flex flex-wrap gap-2 mb-2" th:if="${rec != null}">
+                        <span class="badge bg-light text-dark" th:text="${rec.workPriority.name()}">Priority</span>
+                        <span class="badge bg-info-subtle text-info-emphasis" th:text="${rec.workCategory.name().replace('_',' ')}">Category</span>
+                        <span class="badge bg-light text-dark" th:text="${'Due: ' + #temporals.format(rec.dueDate,'dd MMM')}">Due</span>
+                    </div>
+                    <div class="progress mb-2" style="height:10px;" th:if="${rec != null}">
+                        <div class="progress-bar"
+                             th:classappend="${rec.safeCompletionPercentage >= 100} ? ' bg-success' :
+                                (${rec.safeCompletionPercentage >= 50} ? ' bg-warning' : ' bg-primary')"
+                             th:style="'width:' + ${rec.safeCompletionPercentage} + '%'"></div>
+                    </div>
+                    <div class="row g-2 text-center small" th:if="${rec != null}">
+                        <div class="col-4">
+                            <div class="fw-bold text-primary" th:text="${rec.dailyLeads}">0</div>
+                            <div class="text-muted">Leads</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-warning" th:text="${rec.totalCalls}">0</div>
+                            <div class="text-muted">Calls</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-success" th:text="${rec.safeCompletionPercentage + '%'}">0%</div>
+                            <div class="text-muted">Completion</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</div>
+
+<!-- Team Work Records Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-users me-2 text-primary"></i>Team Work Records</h6>
+        <span class="badge bg-light text-dark"
+              th:text="${'Page ' + (currentPage + 1) + ' of ' + totalPages}">Page 1</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Work Assignment</th>
+                        <th>Targets</th>
+                        <th>Actual</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Timeline</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="emp : ${employees}">
+                        <th:block th:with="rec=${workRecordMap[emp.id]}">
+                            <td>
+                                <div class="fw-semibold" th:text="${emp.employeeName}">Employee</div>
+                                <div class="text-muted small"
+                                     th:text="${emp.employeeId + ' | ' + (emp.designation ?: 'N/A')}">EMP</div>
+                            </td>
+                            <td style="min-width:260px;">
+                                <div class="fw-semibold"
+                                     th:text="${rec != null ? (rec.workTitle ?: 'Assigned Work') : 'No work assigned'}"></div>
+                                <div class="text-muted small"
+                                     th:text="${rec != null ? #strings.abbreviate(rec.workDescription ?: rec.workSummary ?: '-', 90) : 'Use quick edit to assign manual work.'}"></div>
+                                <div class="d-flex flex-wrap gap-2 mt-2" th:if="${rec != null}">
+                                    <span class="badge bg-light text-dark"
+                                          th:text="${rec.workCategory.name().replace('_',' ')}">Category</span>
+                                    <span class="badge bg-light text-dark"
+                                          th:text="${rec.workPriority.name()}">Priority</span>
+                                    <span class="badge"
+                                          th:classappend="${rec.overdue} ? ' bg-danger' : ' bg-success'"
+                                          th:text="${rec.overdue ? 'Overdue' : 'On Track'}">On Track</span>
+                                </div>
+                            </td>
+                            <td class="small">
+                                <div th:if="${rec != null}">
+                                    <div><span class="fw-semibold">Calls:</span> <span th:text="${rec.expectedCallsTarget}">0</span></div>
+                                    <div><span class="fw-semibold">Leads:</span> <span th:text="${rec.expectedLeadsTarget}">0</span></div>
+                                    <div><span class="fw-semibold">Due:</span>
+                                        <span th:text="${rec.dueDate != null ? #temporals.format(rec.dueDate,'dd MMM yyyy') : '-'}">-</span>
+                                    </div>
+                                </div>
+                                <span class="text-muted" th:if="${rec == null}">-</span>
+                            </td>
+                            <td class="small">
+                                <div th:if="${rec != null}">
+                                    <div><span class="fw-semibold">Calls:</span> <span th:text="${rec.totalCalls}">0</span></div>
+                                    <div><span class="fw-semibold">Leads:</span> <span th:text="${rec.dailyLeads}">0</span></div>
+                                    <div><span class="fw-semibold">Connected:</span> <span th:text="${rec.connectedCalls}">0</span></div>
+                                </div>
+                                <span class="text-muted" th:if="${rec == null}">-</span>
+                            </td>
+                            <td>
+                                <div th:if="${rec != null}">
+                                    <span class="badge rounded-pill"
+                                          th:classappend="${rec.workStatus.name() == 'COMPLETED'} ? ' bg-success' :
+                                            (${rec.workStatus.name() == 'IN_PROGRESS'} ? ' bg-warning text-dark' : ' bg-secondary')"
+                                          th:text="${rec.workStatus.name().replace('_',' ')}">Status</span>
+                                    <div class="text-muted small mt-2"
+                                         th:text="${rec.workProgress ?: 'Pending review'}">Progress</div>
+                                </div>
+                                <span class="text-muted" th:if="${rec == null}">Not Assigned</span>
+                            </td>
+                            <td style="min-width:180px;">
+                                <div th:if="${rec != null}">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>Completion</span>
+                                        <span th:text="${rec.safeCompletionPercentage + '%'}">0%</span>
+                                    </div>
+                                    <div class="progress" style="height:10px;">
+                                        <div class="progress-bar"
+                                             th:classappend="${rec.safeCompletionPercentage >= 100} ? ' bg-success' :
+                                                (${rec.safeCompletionPercentage >= 50} ? ' bg-warning' : ' bg-primary')"
+                                             th:style="'width:' + ${rec.safeCompletionPercentage} + '%'"></div>
+                                    </div>
+                                    <div class="text-muted small mt-2"
+                                         th:text="${#strings.abbreviate(rec.workRemarks ?: '-', 55)}">Remarks</div>
+                                </div>
+                                <span class="text-muted" th:if="${rec == null}">-</span>
+                            </td>
+                            <td class="small">
+                                <div th:if="${rec != null}">
+                                    <div><span class="fw-semibold">Assigned By:</span>
+                                        <span th:text="${rec.assignedBy != null ? rec.assignedBy.username : '-'}">-</span>
+                                    </div>
+                                    <div><span class="fw-semibold">Assigned:</span>
+                                        <span th:text="${rec.assignedDateTime != null ? #temporals.format(rec.assignedDateTime,'dd MMM yyyy HH:mm') : '-'}">-</span>
+                                    </div>
+                                    <div><span class="fw-semibold">Updated:</span>
+                                        <span th:text="${rec.updatedAt != null ? #temporals.format(rec.updatedAt,'dd MMM yyyy HH:mm') : '-'}">-</span>
+                                    </div>
+                                </div>
+                                <span class="text-muted" th:if="${rec == null}">-</span>
+                            </td>
+                            <td class="text-center" style="min-width:240px;">
+                                <div class="d-flex flex-wrap justify-content-center gap-1">
+                                    <button class="btn btn-sm btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#workModal"
+                                            th:data-empid="${emp.id}"
+                                            th:data-empname="${emp.employeeName}"
+                                            th:data-worktitle="${rec != null ? rec.workTitle : ''}"
+                                            th:data-workdescription="${rec != null ? rec.workDescription : ''}"
+                                            th:data-workcategory="${rec != null and rec.workCategory != null ? rec.workCategory.name() : ''}"
+                                            th:data-workpriority="${rec != null and rec.workPriority != null ? rec.workPriority.name() : ''}"
+                                            th:data-workstatus="${rec != null and rec.workStatus != null ? rec.workStatus.name() : ''}"
+                                            th:data-workremarks="${rec != null ? rec.workRemarks : ''}"
+                                            th:data-workprogress="${rec != null ? rec.workProgress : ''}"
+                                            th:data-completionpercentage="${rec != null ? rec.safeCompletionPercentage : 0}"
+                                            th:data-expectedcalls="${rec != null ? rec.expectedCallsTarget : 0}"
+                                            th:data-expectedleads="${rec != null ? rec.expectedLeadsTarget : 0}"
+                                            th:data-duedate="${rec != null and rec.dueDate != null ? rec.dueDate : viewDate}"
+                                            th:data-leads="${rec != null ? rec.dailyLeads : 0}"
+                                            th:data-totalcalls="${rec != null ? rec.totalCalls : 0}"
+                                            th:data-connected="${rec != null ? rec.connectedCalls : 0}"
+                                            th:data-notanswered="${rec != null ? rec.notAnswered : 0}"
+                                            th:data-busycalls="${rec != null ? rec.busyCalls : 0}"
+                                            th:data-callnotes="${rec != null ? rec.callNotes : ''}"
+                                            th:data-summary="${rec != null ? rec.workSummary : ''}"
+                                            th:data-adminnotes="${rec != null ? rec.adminNotes : ''}"
+                                            th:data-employeenotes="${rec != null ? rec.employeeNotes : ''}"
+                                            title="Quick Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form th:action="@{/work-tracking/copy-previous-day}" method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="employeeId" th:value="${emp.id}"/>
+                                        <input type="hidden" name="workDate" th:value="${viewDate}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Copy Previous Day">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/work-tracking/duplicate-previous-week}" method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="employeeId" th:value="${emp.id}"/>
+                                        <input type="hidden" name="workDate" th:value="${viewDate}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-dark" title="Duplicate Previous Week">
+                                            <i class="fas fa-clone"></i>
+                                        </button>
+                                    </form>
+                                    <form th:if="${rec != null}" th:action="@{/work-tracking/delete}" method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="workId" th:value="${rec.id}"/>
+                                        <input type="hidden" name="viewDate" th:value="${viewDate}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Quick Delete"
+                                                onclick="return confirm('Delete this work assignment?');">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    <a th:href="@{/work-tracking/employee/{id}(id=${emp.id},month=${viewDate.monthValue},year=${viewDate.year})}"
+                                       class="btn btn-sm btn-outline-info" title="Employee Report">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </th:block>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(employees)}">
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fas fa-users me-2"></i>No matching employees found.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="text-muted small"
+             th:text="${'Showing ' + #lists.size(employees) + ' employee record(s)'}">Showing 0</div>
+        <nav th:if="${totalPages > 1}">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" th:classappend="${currentPage == 0} ? ' disabled'">
+                    <a class="page-link"
+                       th:href="@{/work-tracking(date=${viewDate},search=${search},employeeId=${employeeId},status=${status},priority=${priority},sort=${sort},showDeleted=${showDeleted},size=${pageSize},page=${currentPage - 1})}">Previous</a>
+                </li>
+                <li class="page-item"
+                    th:each="pageNo : ${#numbers.sequence(0, totalPages - 1)}"
+                    th:classappend="${pageNo == currentPage} ? ' active'">
+                    <a class="page-link"
+                       th:text="${pageNo + 1}"
+                       th:href="@{/work-tracking(date=${viewDate},search=${search},employeeId=${employeeId},status=${status},priority=${priority},sort=${sort},showDeleted=${showDeleted},size=${pageSize},page=${pageNo})}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? ' disabled'">
+                    <a class="page-link"
+                       th:href="@{/work-tracking(date=${viewDate},search=${search},employeeId=${employeeId},status=${status},priority=${priority},sort=${sort},showDeleted=${showDeleted},size=${pageSize},page=${currentPage + 1})}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- ── Manual Work Assignment Modal ─────────────────────────────── -->
+<div class="modal fade" id="workModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-clipboard-list me-2"></i>Manual Work Assignment
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/work-tracking/save}" method="post" class="loading-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="workDate" th:value="${viewDate}"/>
+                <input type="hidden" name="employeeId" id="wEmpId"/>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h6 class="fw-bold text-muted mb-0">
+                            Employee: <span id="wEmpName" class="text-dark"></span>
+                        </h6>
+                        <span class="badge bg-light text-dark"
+                              th:text="${#temporals.format(viewDate,'dd MMM yyyy')}">Date</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Work Title</label>
+                            <input type="text" name="workTitle" id="wWorkTitle" class="form-control"
+                                   maxlength="200" placeholder="Daily follow-ups, call campaign, field visit"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Category</label>
+                            <select name="workCategory" id="wWorkCategory" class="form-select">
+                                <option value="">Select Category</option>
+                                <option th:each="item : ${categories}" th:value="${item}"
+                                        th:text="${item.name().replace('_',' ')}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Priority</label>
+                            <select name="workPriority" id="wWorkPriority" class="form-select">
+                                <option value="">Select Priority</option>
+                                <option th:each="item : ${priorities}" th:value="${item}"
+                                        th:text="${item.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Work Description</label>
+                            <textarea name="workDescription" id="wWorkDescription" class="form-control" rows="3"
+                                      placeholder="Describe the expected work assignment for the day."></textarea>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Due Date</label>
+                            <input type="date" name="dueDate" id="wDueDate" class="form-control"/>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Work Status</label>
+                            <select name="workStatus" id="wWorkStatus" class="form-select">
+                                <option value="">Select Status</option>
+                                <option th:each="item : ${statuses}" th:value="${item}"
+                                        th:text="${item.name().replace('_',' ')}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Expected Calls Target</label>
+                            <input type="number" name="expectedCallsTarget" id="wExpectedCalls"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Expected Leads Target</label>
+                            <input type="number" name="expectedLeadsTarget" id="wExpectedLeads"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Progress</label>
+                            <input type="text" name="workProgress" id="wWorkProgress" class="form-control"
+                                   placeholder="Pending review, follow-up started"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Completion %</label>
+                            <input type="number" name="completionPercentage" id="wCompletion"
+                                   class="form-control" min="0" max="100" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-primary">Daily Leads</label>
+                            <input type="number" name="dailyLeads" id="wLeads"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-warning">Total Calls</label>
+                            <input type="number" name="totalCalls" id="wTotalCalls"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-success">Connected</label>
+                            <input type="number" name="connectedCalls" id="wConnected"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-secondary">Not Answered</label>
+                            <input type="number" name="notAnswered" id="wNotAnswered"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Busy / Dropped</label>
+                            <input type="number" name="busyCalls" id="wBusy"
+                                   class="form-control" min="0" value="0"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Call Notes</label>
+                            <textarea name="callNotes" id="wCallNotes" class="form-control" rows="2"
+                                      placeholder="Key conversations and call outcomes"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Work Summary</label>
+                            <textarea name="workSummary" id="wSummary" class="form-control" rows="2"
+                                      placeholder="Summary of the day and expected result"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Work Remarks</label>
+                            <textarea name="workRemarks" id="wRemarks" class="form-control" rows="2"
+                                      placeholder="Additional remarks"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Admin Notes</label>
+                            <textarea name="adminNotes" id="wAdminNotes" class="form-control" rows="2"
+                                      placeholder="Internal note for managers/admin"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Employee Notes</label>
+                            <textarea name="employeeNotes" id="wEmployeeNotes" class="form-control" rows="2"
+                                      placeholder="Employee note or response"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-loading-text="Saving Assignment...">
+                        <i class="fas fa-save me-2"></i>Save Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Bulk Assignment Modal ─────────────────────────────────────── -->
+<div class="modal fade" id="bulkAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-layer-group me-2"></i>Bulk Work Assignment
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/work-tracking/bulk-assign}" method="post" class="loading-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="rangeDays" id="bulkRangeDays" value="7"/>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" name="startDate" class="form-control" th:value="${viewDate}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Range</label>
+                            <select id="bulkRangePreset" class="form-select">
+                                <option value="7" selected>7 Days</option>
+                                <option value="15">15 Days</option>
+                                <option value="30">30 Days</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="bulkEndDateWrap">
+                            <label class="form-label fw-semibold">Custom End Date</label>
+                            <input type="date" name="endDate" id="bulkEndDate" class="form-control"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Employee</label>
+                            <select name="employeeId" id="bulkEmployeeId" class="form-select">
+                                <option value="">Select Employee</option>
+                                <option th:each="emp : ${allEmployees}" th:value="${emp.id}"
+                                        th:text="${emp.employeeName}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" name="assignAllEmployees"
+                                       value="true" id="assignAllEmployees"/>
+                                <label class="form-check-label fw-semibold" for="assignAllEmployees">
+                                    Assign To All Employees
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Copy Previous Work</label>
+                            <select name="copyMode" class="form-select">
+                                <option th:each="mode : ${copyModes}" th:value="${mode}"
+                                        th:text="${mode.name().replace('_',' ')}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Work Title</label>
+                            <input type="text" name="workTitle" class="form-control" maxlength="200"
+                                   placeholder="Monthly follow-up plan or campaign title"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Category</label>
+                            <select name="workCategory" class="form-select">
+                                <option value="">Select Category</option>
+                                <option th:each="item : ${categories}" th:value="${item}"
+                                        th:text="${item.name().replace('_',' ')}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Priority</label>
+                            <select name="workPriority" class="form-select">
+                                <option value="">Select Priority</option>
+                                <option th:each="item : ${priorities}" th:value="${item}"
+                                        th:text="${item.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Work Description</label>
+                            <textarea name="workDescription" class="form-control" rows="3"
+                                      placeholder="Assignment details for all selected days"></textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Status</label>
+                            <select name="workStatus" class="form-select">
+                                <option value="">Select Status</option>
+                                <option th:each="item : ${statuses}" th:value="${item}"
+                                        th:text="${item.name().replace('_',' ')}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Completion %</label>
+                            <input type="number" name="completionPercentage" class="form-control"
+                                   min="0" max="100" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Expected Calls Target</label>
+                            <input type="number" name="expectedCallsTarget" class="form-control"
+                                   min="0" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Expected Leads Target</label>
+                            <input type="number" name="expectedLeadsTarget" class="form-control"
+                                   min="0" value="0"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Progress</label>
+                            <input type="text" name="workProgress" class="form-control"
+                                   placeholder="Prepared, assigned, pending"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Work Remarks</label>
+                            <textarea name="workRemarks" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Admin Notes</label>
+                            <textarea name="adminNotes" class="form-control" rows="2"
+                                      placeholder="Shared instruction for the assignment range"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-loading-text="Saving Bulk Assignment...">
+                        <i class="fas fa-save me-2"></i>Save Bulk Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    // ── Work modal: populate fields on open ────────────────────────
+    const workModal = document.getElementById('workModal');
+    if (workModal) {
+        workModal.addEventListener('show.bs.modal', function (event) {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            const setValue = (id, value, fallback = '') => {
+                const input = document.getElementById(id);
+                if (input) input.value = value ?? fallback;
+            };
+            setValue('wEmpId',          trigger.dataset.empid);
+            document.getElementById('wEmpName').textContent = trigger.dataset.empname || '';
+            setValue('wWorkTitle',      trigger.dataset.worktitle);
+            setValue('wWorkDescription',trigger.dataset.workdescription);
+            setValue('wWorkCategory',   trigger.dataset.workcategory);
+            setValue('wWorkPriority',   trigger.dataset.workpriority);
+            setValue('wWorkStatus',     trigger.dataset.workstatus || 'PENDING');
+            setValue('wRemarks',        trigger.dataset.workremarks);
+            setValue('wWorkProgress',   trigger.dataset.workprogress);
+            setValue('wCompletion',     trigger.dataset.completionpercentage, 0);
+            setValue('wExpectedCalls',  trigger.dataset.expectedcalls, 0);
+            setValue('wExpectedLeads',  trigger.dataset.expectedleads, 0);
+            setValue('wDueDate',        trigger.dataset.duedate);
+            setValue('wLeads',          trigger.dataset.leads, 0);
+            setValue('wTotalCalls',     trigger.dataset.totalcalls, 0);
+            setValue('wConnected',      trigger.dataset.connected, 0);
+            setValue('wNotAnswered',    trigger.dataset.notanswered, 0);
+            setValue('wBusy',           trigger.dataset.busycalls, 0);
+            setValue('wCallNotes',      trigger.dataset.callnotes);
+            setValue('wSummary',        trigger.dataset.summary);
+            setValue('wAdminNotes',     trigger.dataset.adminnotes);
+            setValue('wEmployeeNotes',  trigger.dataset.employeenotes);
+        });
+    }
+
+    // ── Bulk modal: range preset toggle ───────────────────────────
+    const bulkRangePreset  = document.getElementById('bulkRangePreset');
+    const bulkRangeDays    = document.getElementById('bulkRangeDays');
+    const bulkEndDateWrap  = document.getElementById('bulkEndDateWrap');
+    const bulkEndDate      = document.getElementById('bulkEndDate');
+    if (bulkRangePreset && bulkRangeDays && bulkEndDateWrap && bulkEndDate) {
+        const syncBulkRange = () => {
+            const isCustom = bulkRangePreset.value === 'custom';
+            bulkRangeDays.value = isCustom ? '' : bulkRangePreset.value;
+            bulkEndDateWrap.classList.toggle('d-none', !isCustom);
+            bulkEndDate.required = isCustom;
+            if (!isCustom) bulkEndDate.value = '';
+        };
+        bulkRangePreset.addEventListener('change', syncBulkRange);
+        syncBulkRange();
+    }
+
+    // ── Bulk modal: assign-all toggle ─────────────────────────────
+    const assignAllEmployees = document.getElementById('assignAllEmployees');
+    const bulkEmployeeId     = document.getElementById('bulkEmployeeId');
+    if (assignAllEmployees && bulkEmployeeId) {
+        const syncEmployeeSelect = () => {
+            bulkEmployeeId.disabled = assignAllEmployees.checked;
+            if (assignAllEmployees.checked) bulkEmployeeId.value = '';
+        };
+        assignAllEmployees.addEventListener('change', syncEmployeeSelect);
+        syncEmployeeSelect();
+    }
+
+    // ── Loading spinner on form submit ────────────────────────────
+    document.querySelectorAll('.loading-form').forEach(form => {
+        form.addEventListener('submit', function () {
+            const btn = form.querySelector('button[type="submit"]');
+            if (!btn) return;
+            btn.disabled = true;
+            const label = btn.getAttribute('data-loading-text') || 'Saving...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + label;
+        });
+    });
+}());
+</script>
+
+</th:block>
+</html>

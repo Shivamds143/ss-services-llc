@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, null, 'employees',
+                  ${employee.id == null ? 'Add Employee' : 'Edit Employee'})}">
+<th:block th:fragment="content">
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <h5 class="fw-bold" th:text="${employee.id == null ? 'Add New Employee' : 'Edit Employee'}"></h5>
+    <a th:href="@{/employees}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+</div>
+<form th:action="${employee.id == null ? '/employees/save' : '/employees/' + employee.id + '/update'}"
+      method="post" enctype="multipart/form-data">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+    <div class="row g-3">
+        <!-- Photo Upload Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3">
+                <div class="mb-3">
+                    <img id="photoPreview"
+                         th:src="${employee.photoPath != null ? '/' + employee.photoPath : '/images/default-avatar.png'}"
+                         class="rounded-circle" style="width:120px;height:120px;object-fit:cover;border:3px solid #e0e0e0;"/>
+                </div>
+                <label class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-camera me-1"></i>Upload Photo
+                    <input type="file" name="photo" accept="image/*" hidden id="photoInput"/>
+                </label>
+                <div class="text-muted small mt-2">Max 5MB, JPG/PNG</div>
+            </div>
+        </div>
+
+        <!-- Employee Details -->
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-primary text-white py-2">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Personal Information</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Employee ID</label>
+                            <input type="text" name="employeeId" class="form-control form-control-sm"
+                                   th:value="${employee.employeeId}" required/>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Employee Name <span class="text-danger">*</span></label>
+                            <input type="text" name="employeeName" class="form-control form-control-sm"
+                                   th:value="${employee.employeeName}" required/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Father's Name</label>
+                            <input type="text" name="fatherName" class="form-control form-control-sm"
+                                   th:value="${employee.fatherName}"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Mother's Name</label>
+                            <input type="text" name="motherName" class="form-control form-control-sm"
+                                   th:value="${employee.motherName}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Date of Birth</label>
+                            <input type="date" name="dateOfBirth" class="form-control form-control-sm"
+                                   th:value="${employee.dateOfBirth}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Gender</label>
+                            <select name="gender" class="form-select form-select-sm">
+                                <option value="">Select</option>
+                                <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"
+                                        th:selected="${employee.gender == g}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Mobile <span class="text-danger">*</span></label>
+                            <input type="tel" name="mobileNumber" class="form-control form-control-sm"
+                                   th:value="${employee.mobileNumber}" required/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Email</label>
+                            <input type="email" name="email" class="form-control form-control-sm"
+                                   th:value="${employee.email}"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Alternate Mobile</label>
+                            <input type="tel" name="alternateMobile" class="form-control form-control-sm"
+                                   th:value="${employee.alternateMobile}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-success text-white py-2">
+                    <h6 class="mb-0"><i class="fas fa-briefcase me-2"></i>Job Information</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Designation</label>
+                            <input type="text" name="designation" class="form-control form-control-sm"
+                                   th:value="${employee.designation}" placeholder="e.g. Manager"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Department</label>
+                            <input type="text" name="department" class="form-control form-control-sm"
+                                   th:value="${employee.department}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Joining Date <span class="text-danger">*</span></label>
+                            <input type="date" name="joiningDate" class="form-control form-control-sm"
+                                   th:value="${employee.joiningDate}" required/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Salary (₹)</label>
+                            <input type="number" name="salary" class="form-control form-control-sm"
+                                   th:value="${employee.salary}" step="0.01"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">PAN Number</label>
+                            <input type="text" name="panNumber" class="form-control form-control-sm"
+                                   th:value="${employee.panNumber}" maxlength="10"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Aadhar Number</label>
+                            <input type="text" name="aadharNumber" class="form-control form-control-sm"
+                                   th:value="${employee.aadharNumber}" maxlength="12"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white py-2">
+                    <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Address & Bank</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Address</label>
+                            <textarea name="address" class="form-control form-control-sm" rows="2"
+                                      th:text="${employee.address}"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">City</label>
+                            <input type="text" name="city" class="form-control form-control-sm" th:value="${employee.city}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">State</label>
+                            <input type="text" name="state" class="form-control form-control-sm" th:value="${employee.state}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Pincode</label>
+                            <input type="text" name="pincode" class="form-control form-control-sm" th:value="${employee.pincode}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Bank Name</label>
+                            <input type="text" name="bankName" class="form-control form-control-sm" th:value="${employee.bankName}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Account Number</label>
+                            <input type="text" name="bankAccountNumber" class="form-control form-control-sm"
+                                   th:value="${employee.bankAccountNumber}"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">IFSC Code</label>
+                            <input type="text" name="ifscCode" class="form-control form-control-sm"
+                                   th:value="${employee.ifscCode}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-2"></i>
+            <span th:text="${employee.id == null ? 'Save Employee' : 'Update Employee'}">Save</span>
+        </button>
+        <a th:href="@{/employees}" class="btn btn-outline-secondary px-4">Cancel</a>
+    </div>
+</form>
+</th:block>
+<th:block th:fragment="extraJs">
+<script>
+document.getElementById('photoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            document.getElementById('photoPreview').src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+</th:block>
+</html>

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, null, 'inquiries',
+                  ${inquiry.id == null ? 'New Inquiry' : 'Edit Inquiry'})}">
+<th:block th:fragment="content">
+
+<style>
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+        border-radius: 10px 10px 0 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0;
+    }
+    .section-header i { font-size: 16px; }
+    .inquiry-section {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 28px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .inquiry-section .section-body {
+        padding: 24px;
+        background: #fff;
+    }
+    .section-divider {
+        font-size: 13px;
+        font-weight: 700;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 0 6px 0;
+        border-bottom: 2px solid #eee;
+        margin-bottom: 16px;
+    }
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #555;
+        margin-bottom: 5px;
+    }
+    .form-control, .form-select {
+        border-radius: 7px;
+        border: 1.5px solid #ddd;
+        font-size: 14px;
+        padding: 8px 12px;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4a90d9;
+        box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+    }
+    .co-toggle-bar {
+        background: #f0f7ff;
+        border: 1.5px solid #b3d4f5;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .ref-block {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    .ref-block .ref-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: #444;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .submit-bar {
+        background: #fff;
+        border-top: 2px solid #eee;
+        padding: 20px 0;
+        margin-top: 8px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .btn-save-inquiry {
+        background: linear-gradient(135deg, #1a73e8, #0d5bc4);
+        color: #fff;
+        border: none;
+        padding: 11px 36px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+    }
+    .btn-save-inquiry:hover { background: linear-gradient(135deg, #1565c0, #0a4aa0); color:#fff; }
+    .occ-salaried, .occ-selfemployed { transition: all 0.2s; }
+</style>
+
+<!-- Page header -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold" th:text="${inquiry.id == null ? 'Create New Inquiry' : 'Edit Inquiry'}"></h5>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a th:href="@{/dashboard}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/inquiries}">Inquiries</a></li>
+                <li class="breadcrumb-item active" th:text="${inquiry.id == null ? 'New' : 'Edit'}"></li>
+            </ol>
+        </nav>
+    </div>
+    <a th:href="@{/inquiries}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+<form id="inquiryForm"
+      th:action="${inquiry.id == null ? '/inquiries/save' : '/inquiries/' + inquiry.id + '/update'}"
+      method="post" th:object="${inquiry}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <input type="hidden" th:field="*{id}" th:if="${inquiry.id != null}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1 — INQUIRY DETAILS
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#1a73e8,#1558b0);">
+            <i class="fas fa-file-alt"></i> Inquiry Details
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+
+                <!-- Customer Search -->
+                <div class="col-md-6 position-relative">
+                    <label class="form-label">Customer <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="text" id="customerSearch" class="form-control"
+                               placeholder="Search by name or mobile..."
+                               th:value="${inquiry.customer != null ? inquiry.customer.customerName : ''}"/>
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    </div>
+                    <input type="hidden" name="customerId" id="customerId"
+                           th:value="${inquiry.customer != null ? inquiry.customer.id : preselectedCustomerId}"/>
+                    <div id="customerResults" class="list-group position-absolute w-100 shadow"
+                         style="display:none; max-height:200px; overflow-y:auto; top:100%; left:0; z-index:999;"></div>
+                    <div id="customerError" class="text-danger small mt-1" style="display:none;">
+                        <i class="fas fa-exclamation-circle me-1"></i>Please select a customer.
+                    </div>
+                </div>
+
+                <!-- Inquiry Type -->
+                <div class="col-md-6">
+                    <label class="form-label">Inquiry Type <span class="text-danger">*</span></label>
+                    <select name="inquiryTypeId" id="inquiryTypeSelect" class="form-select" required>
+                        <option value="">-- Select Type --</option>
+                        <option th:each="t : ${inquiryTypes}" th:value="${t.id}" th:text="${t.typeName}"
+                                th:selected="${inquiry.inquiryType != null and inquiry.inquiryType.id == t.id}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Inquiry Date</label>
+                    <input type="date" th:field="*{inquiryDate}" class="form-control"
+                           th:value="${inquiry.inquiryDate ?: today}"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Loan Amount (₹)</label>
+                    <input type="number" th:field="*{loanAmount}" class="form-control" step="0.01" min="0" placeholder="0.00"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select th:field="*{status}" class="form-select">
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.name().replace('_',' ')}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Priority</label>
+                    <select th:field="*{priority}" class="form-select">
+                        <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Assigned To</label>
+                    <select name="assignedToId" class="form-select">
+                        <option value="">-- Unassigned --</option>
+                        <option th:each="u : ${allUsers}" th:value="${u.id}" th:text="${u.fullName}"
+                                th:selected="${inquiry.assignedTo != null and inquiry.assignedTo.id == u.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bank Name</label>
+                    <input type="text" th:field="*{bankName}" class="form-control" placeholder="Bank name"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Interest Rate (%)</label>
+                    <input type="number" th:field="*{interestRate}" class="form-control" step="0.01" min="0" max="100" placeholder="e.g. 8.5"/>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Tenure (Months)</label>
+                    <input type="number" th:field="*{tenureMonths}" class="form-control" min="1" placeholder="e.g. 240"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">EMI Amount (₹)</label>
+                    <input type="number" th:field="*{emiAmount}" class="form-control" step="0.01" min="0" id="emiDisplay" placeholder="Auto-calculated"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Expected Close Date</label>
+                    <input type="date" th:field="*{expectedCloseDate}" class="form-control"/>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Rejection Reason</label>
+                    <input type="text" th:field="*{rejectionReason}" class="form-control" placeholder="If rejected..."/>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Remarks</label>
+                    <textarea th:field="*{remarks}" class="form-control" rows="3" placeholder="Notes..."></textarea>
+                </div>
+
+                <!-- Insurance checklist panel -->
+                <div class="col-12" id="insuranceDocsPanel" style="display:none;">
+                    <div style="border:1.5px solid #f0a500; border-radius:8px; overflow:hidden;">
+                        <div style="background:#fff8e1; padding:10px 16px; font-weight:600; font-size:13px; color:#856404;">
+                            <i class="fas fa-clipboard-list me-2"></i>Required Documents
+                            <span id="insTypeLabel" class="ms-2 fw-normal text-muted"></span>
+                        </div>
+                        <div style="padding:14px 16px; background:#fff;">
+
+                            <!-- ── NEW: Insurance Type + Sub-Type fields ── -->
+                            <div class="row g-3 mb-3 pb-3 border-bottom">
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-shield-alt me-1 text-warning"></i>Insurance Type
+                                    </label>
+                                    <select th:field="*{insuranceType}" id="insuranceTypeSelect" class="form-select">
+                                        <option value="">-- Select Insurance Type --</option>
+                                        <option value="Life Insurance">Life Insurance</option>
+                                        <option value="Health Insurance">Health Insurance</option>
+                                        <option value="General Insurance">General Insurance</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">
+                                        <i class="fas fa-tag me-1 text-secondary"></i>Insurance Sub-Type
+                                    </label>
+                                    <input type="text" th:field="*{insuranceSubType}"
+                                           class="form-control"
+                                           placeholder="e.g. Term, Endowment, Motor, Travel, Fire, Health Floater..."/>
+                                    <div class="form-text text-muted">Optional — specify the exact plan or sub-category</div>
+                                </div>
+                            </div>
+                            <!-- ── END: Insurance Type + Sub-Type fields ── -->
+
+                            <div class="mb-3">
+                                <div class="section-divider">Basic Documents (All Types)</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge bg-light text-dark border">Aadhaar Card</span>
+                                    <span class="badge bg-light text-dark border">PAN Card</span>
+                                    <span class="badge bg-light text-dark border">Passport Photo</span>
+                                    <span class="badge bg-light text-dark border">Mobile Number</span>
+                                    <span class="badge bg-light text-dark border">Email ID</span>
+                                    <span class="badge bg-light text-dark border">Bank Statement / Cancelled Cheque</span>
+                                </div>
+                            </div>
+                            <div id="ins_term" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#0d6efd;">Term Insurance — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Age &amp; Health Details</span>
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Smoking / Drinking Habit</span>
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Annual Income</span>
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Existing Insurance Details</span>
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Nominee Information</span>
+                                    <span class="badge border" style="background:#e8f0fe;color:#1a73e8;">Medical History</span>
+                                </div>
+                            </div>
+                            <div id="ins_endowment" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#198754;">Endowment / Saving Plan — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#e8f5e9;color:#198754;">Investment Goal</span>
+                                    <span class="badge border" style="background:#e8f5e9;color:#198754;">Policy Term Required</span>
+                                    <span class="badge border" style="background:#e8f5e9;color:#198754;">Premium Budget</span>
+                                    <span class="badge border" style="background:#e8f5e9;color:#198754;">Nominee Details</span>
+                                    <span class="badge border" style="background:#e8f5e9;color:#198754;">Income Proof</span>
+                                </div>
+                            </div>
+                            <div id="ins_health" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#dc3545;">Health Insurance — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Age of All Members</span>
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Existing Diseases</span>
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Previous Medical History</span>
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Height &amp; Weight</span>
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Current Insurance Policy Copy</span>
+                                    <span class="badge border" style="background:#fdecea;color:#dc3545;">Family Details</span>
+                                </div>
+                            </div>
+                            <div id="ins_general" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#f0a500;">General / Property Insurance — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#fff8e1;color:#856404;">Property Address</span>
+                                    <span class="badge border" style="background:#fff8e1;color:#856404;">Property Value</span>
+                                    <span class="badge border" style="background:#fff8e1;color:#856404;">Property Documents</span>
+                                    <span class="badge border" style="background:#fff8e1;color:#856404;">Business Details</span>
+                                </div>
+                            </div>
+                            <div id="ins_vehicle" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#0dcaf0;">Vehicle Insurance — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">RC Book</span>
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">Previous Insurance Copy</span>
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">Vehicle Number</span>
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">Engine &amp; Chassis Number</span>
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">Vehicle Model &amp; Year</span>
+                                    <span class="badge border" style="background:#e0f7fa;color:#0c7490;">Owner Aadhaar &amp; PAN</span>
+                                </div>
+                            </div>
+                            <div id="ins_marine" class="ins-type-docs" style="display:none;">
+                                <div class="section-divider" style="color:#6c757d;">Marine Insurance — Additional</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Import / Export Details</span>
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Invoice Copy</span>
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Goods Details</span>
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Shipment Details</span>
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Transport Mode</span>
+                                    <span class="badge border" style="background:#f8f9fa;color:#495057;">Destination Information</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2 — APPLICANT PERSONAL INFO
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#2e7d32,#1b5e20);">
+            <i class="fas fa-user"></i> Applicant — Personal Information
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">PAN</label>
+                    <input type="text" th:field="*{applicantPan}" class="form-control text-uppercase" maxlength="10" placeholder="ABCDE1234F"/>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Name as per PAN</label>
+                    <input type="text" th:field="*{applicantNameAsPan}" class="form-control text-uppercase" placeholder="Full name exactly as on PAN card"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Surname</label>
+                    <input type="text" th:field="*{applicantSurname}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">First Name</label>
+                    <input type="text" th:field="*{applicantFirstName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" th:field="*{applicantMiddleName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Father's / Husband's Name</label>
+                    <input type="text" th:field="*{applicantFatherHusbandName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" th:field="*{applicantDob}" class="form-control"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Gender</label>
+                    <select th:field="*{applicantGender}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Marital Status</label>
+                    <select th:field="*{applicantMaritalStatus}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SINGLE">Single</option>
+                        <option value="MARRIED">Married</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Residency Status</label>
+                    <select th:field="*{applicantResidencyStatus}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="RESIDENT_INDIAN">Resident Indian</option>
+                        <option value="NON_RESIDENT_INDIAN">Non-Resident Indian</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select th:field="*{applicantCategory}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SC_ST">SC / ST</option>
+                        <option value="OBC">OBC</option>
+                        <option value="OTHERS">Others</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Educational Qualification</label>
+                    <input type="text" th:field="*{applicantEducation}" class="form-control" placeholder="e.g. B.Com, MBA"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Institute / University</label>
+                    <input type="text" th:field="*{applicantInstitute}" class="form-control"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Children</label>
+                    <input type="number" th:field="*{applicantDependentsChildren}" class="form-control" min="0" placeholder="0"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Adults</label>
+                    <input type="number" th:field="*{applicantDependentsAdults}" class="form-control" min="0" placeholder="0"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3 — APPLICANT ADDRESS
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#388e3c,#256427);">
+            <i class="fas fa-map-marker-alt"></i> Applicant — Current / Permanent Address
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Flat / Unit / Block No.</label>
+                    <input type="text" th:field="*{applicantFlatNo}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Name of Building / Premises</label>
+                    <input type="text" th:field="*{applicantBuilding}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Road / Street</label>
+                    <input type="text" th:field="*{applicantRoad}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nearest Landmark</label>
+                    <input type="text" th:field="*{applicantLandmark}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Area / Locality</label>
+                    <input type="text" th:field="*{applicantArea}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">City / Town</label>
+                    <input type="text" th:field="*{applicantCity}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">State</label>
+                    <input type="text" th:field="*{applicantState}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">PIN</label>
+                    <input type="text" th:field="*{applicantPin}" class="form-control" maxlength="6"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" th:field="*{applicantPhone}" class="form-control" maxlength="15"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Years at this Address</label>
+                    <input type="number" th:field="*{applicantYearsAtResidence}" class="form-control" min="0"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Residence Status</label>
+                    <select th:field="*{applicantResidenceStatus}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SELF_OWNED">Self-Owned</option>
+                        <option value="OWNED_BY_FAMILY">Owned by Family</option>
+                        <option value="RENTED">Rented</option>
+                        <option value="EMPLOYER_LEASED">Employer Leased</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 4 — APPLICANT INCOME & EMPLOYMENT
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#e65100,#bf360c);">
+            <i class="fas fa-briefcase"></i> Applicant — Income &amp; Employment
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Occupation</label>
+                    <select th:field="*{applicantOccupation}" class="form-select" id="applicantOccupationSelect">
+                        <option value="">-- Select --</option>
+                        <option value="SALARIED">Salaried</option>
+                        <option value="SELF_EMPLOYED">Self-Employed</option>
+                        <option value="PROFESSIONAL">Professional</option>
+                        <option value="RETIRED">Retired</option>
+                        <option value="HOMEMAKER">Homemaker</option>
+                        <option value="STUDENT">Student</option>
+                        <option value="OTHERS">Others</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Employer / Business Name</label>
+                    <input type="text" th:field="*{applicantEmployerName}" class="form-control text-uppercase"/>
+                </div>
+
+                <!-- Salaried fields -->
+                <div class="col-md-4 occ-salaried">
+                    <label class="form-label">Designation</label>
+                    <input type="text" th:field="*{applicantDesignation}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4 occ-salaried">
+                    <label class="form-label">Employee No.</label>
+                    <input type="text" th:field="*{applicantEmployeeNo}" class="form-control"/>
+                </div>
+                <div class="col-md-4 occ-salaried">
+                    <label class="form-label">Department</label>
+                    <input type="text" th:field="*{applicantDepartment}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3 occ-salaried">
+                    <label class="form-label">Date of Joining</label>
+                    <input type="date" th:field="*{applicantDateOfJoining}" class="form-control"/>
+                </div>
+                <div class="col-md-3 occ-salaried">
+                    <label class="form-label">Total Experience (Yrs)</label>
+                    <input type="number" th:field="*{applicantTotalExperience}" class="form-control" min="0"/>
+                </div>
+                <div class="col-md-3 occ-salaried">
+                    <label class="form-label">Retirement Age</label>
+                    <input type="number" th:field="*{applicantRetirementAge}" class="form-control" min="0" max="75"/>
+                </div>
+
+                <!-- Self-Employed fields -->
+                <div class="col-md-6 occ-selfemployed">
+                    <label class="form-label">Nature of Business</label>
+                    <input type="text" th:field="*{applicantNatureOfBusiness}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3 occ-selfemployed">
+                    <label class="form-label">Years in Business</label>
+                    <input type="number" th:field="*{applicantYearsInBusiness}" class="form-control" min="0"/>
+                </div>
+
+                <!-- Income — always visible -->
+                <div class="col-md-3">
+                    <label class="form-label">Gross Annual Income (₹)</label>
+                    <input type="number" th:field="*{applicantGrossAnnualIncome}" class="form-control" step="0.01" min="0"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Net Annual Income (₹)</label>
+                    <input type="number" th:field="*{applicantNetAnnualIncome}" class="form-control" step="0.01" min="0"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 5 — CO-APPLICANT
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#0288d1,#01579b);">
+            <i class="fas fa-user-friends"></i> Co-Applicant Details
+            <span class="ms-auto d-flex align-items-center gap-2" style="font-weight:400; font-size:13px;">
+                Add Co-Applicant
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="hasCoApplicant" role="switch" style="cursor:pointer;"/>
+                </div>
+            </span>
+        </div>
+        <div class="section-body" id="coApplicantSection" style="display:none;">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">PAN</label>
+                    <input type="text" th:field="*{coapplicantPan}" class="form-control text-uppercase" maxlength="10" placeholder="ABCDE1234F"/>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Name as per PAN</label>
+                    <input type="text" th:field="*{coapplicantNameAsPan}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Surname</label>
+                    <input type="text" th:field="*{coapplicantSurname}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">First Name</label>
+                    <input type="text" th:field="*{coapplicantFirstName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" th:field="*{coapplicantMiddleName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Father's / Husband's Name</label>
+                    <input type="text" th:field="*{coapplicantFatherHusbandName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" th:field="*{coapplicantDob}" class="form-control"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Gender</label>
+                    <select th:field="*{coapplicantGender}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Marital Status</label>
+                    <select th:field="*{coapplicantMaritalStatus}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SINGLE">Single</option>
+                        <option value="MARRIED">Married</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Residency Status</label>
+                    <select th:field="*{coapplicantResidencyStatus}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="RESIDENT_INDIAN">Resident Indian</option>
+                        <option value="NON_RESIDENT_INDIAN">NRI</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select th:field="*{coapplicantCategory}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SC_ST">SC / ST</option>
+                        <option value="OBC">OBC</option>
+                        <option value="OTHERS">Others</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Education</label>
+                    <input type="text" th:field="*{coapplicantEducation}" class="form-control"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Relation with Applicant</label>
+                    <input type="text" th:field="*{coapplicantRelation}" class="form-control" placeholder="e.g. Spouse, Parent, Sibling"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Occupation</label>
+                    <select th:field="*{coapplicantOccupation}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="SALARIED">Salaried</option>
+                        <option value="SELF_EMPLOYED">Self-Employed</option>
+                        <option value="PROFESSIONAL">Professional</option>
+                        <option value="RETIRED">Retired</option>
+                        <option value="HOMEMAKER">Homemaker</option>
+                        <option value="STUDENT">Student</option>
+                        <option value="OTHERS">Others</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Employer / Business Name</label>
+                    <input type="text" th:field="*{coapplicantEmployerName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Gross Annual Income (₹)</label>
+                    <input type="number" th:field="*{coapplicantGrossAnnualIncome}" class="form-control" step="0.01" min="0"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Net Annual Income (₹)</label>
+                    <input type="number" th:field="*{coapplicantNetAnnualIncome}" class="form-control" step="0.01" min="0"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 6 — PROPERTY INFORMATION
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#6a1b9a,#4a148c);">
+            <i class="fas fa-home"></i> Property Information
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Flat / Unit / Plot No.</label>
+                    <input type="text" th:field="*{propertyFlatNo}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Floor No.</label>
+                    <input type="text" th:field="*{propertyFloorNo}" class="form-control"/>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label">Name of Building / Premises</label>
+                    <input type="text" th:field="*{propertyBuilding}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Area / Locality</label>
+                    <input type="text" th:field="*{propertyArea}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Nearest Landmark</label>
+                    <input type="text" th:field="*{propertyLandmark}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">City / Town</label>
+                    <input type="text" th:field="*{propertyCity}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">State</label>
+                    <input type="text" th:field="*{propertyState}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">PIN</label>
+                    <input type="text" th:field="*{propertyPin}" class="form-control" maxlength="6"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Property Owner Name(s)</label>
+                    <input type="text" th:field="*{propertyOwnerName}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Property Value (₹)</label>
+                    <input type="number" th:field="*{propertyValue}" class="form-control" step="0.01" min="0"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 7 — BANK ACCOUNT DETAILS
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#37474f,#263238);">
+            <i class="fas fa-university"></i> Bank Account Details
+        </div>
+        <div class="section-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Account Holder Name</label>
+                    <input type="text" th:field="*{bankAccountHolder}" class="form-control text-uppercase"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Account No.</label>
+                    <input type="text" th:field="*{bankAccountNo}" class="form-control"/>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">IFSC Code</label>
+                    <input type="text" th:field="*{bankIfsc}" class="form-control text-uppercase" maxlength="11"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Account Type</label>
+                    <select th:field="*{bankAccountType}" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="Savings">Savings</option>
+                        <option value="Current">Current</option>
+                        <option value="Salary">Salary</option>
+                        <option value="OD">OD / Overdraft</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 8 — REFERENCES
+    ════════════════════════════════════════════════════════════ -->
+    <div class="inquiry-section">
+        <div class="section-header" style="background: linear-gradient(135deg,#ad1457,#880e4f);">
+            <i class="fas fa-address-book"></i> References
+        </div>
+        <div class="section-body">
+            <div class="ref-block">
+                <div class="ref-title"><i class="fas fa-user-circle me-2 text-muted"></i>Reference 1</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" th:field="*{ref1Name}" class="form-control text-uppercase"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" th:field="*{ref1Mobile}" class="form-control" maxlength="15"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" th:field="*{ref1Email}" class="form-control"/>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Relation</label>
+                        <select th:field="*{ref1Relation}" class="form-select">
+                            <option value="">-- Select --</option>
+                            <option value="Friend">Friend</option>
+                            <option value="Colleague">Colleague</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <textarea th:field="*{ref1Address}" class="form-control text-uppercase" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ref-block">
+                <div class="ref-title"><i class="fas fa-user-circle me-2 text-muted"></i>Reference 2</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" th:field="*{ref2Name}" class="form-control text-uppercase"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" th:field="*{ref2Mobile}" class="form-control" maxlength="15"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" th:field="*{ref2Email}" class="form-control"/>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Relation</label>
+                        <select th:field="*{ref2Relation}" class="form-select">
+                            <option value="">-- Select --</option>
+                            <option value="Friend">Friend</option>
+                            <option value="Colleague">Colleague</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <textarea th:field="*{ref2Address}" class="form-control text-uppercase" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Submit Bar ──────────────────────────────────────────────── -->
+    <div class="submit-bar">
+        <button type="submit" class="btn btn-save-inquiry">
+            <i class="fas fa-save me-2"></i>
+            <span th:text="${inquiry.id == null ? 'Save Inquiry' : 'Update Inquiry'}">Save</span>
+        </button>
+        <a th:href="@{/inquiries}" class="btn btn-outline-secondary px-4">Cancel</a>
+    </div>
+
+</form>
+
+</th:block>
+
+<th:block th:fragment="extraJs">
+<script th:inline="javascript">
+
+// ── Customer search ─────────────────────────────────────────────
+let originalCustomerId   = document.getElementById('customerId').value;
+let originalCustomerName = document.getElementById('customerSearch').value;
+document.getElementById('customerSearch').setAttribute('data-original-name', originalCustomerName);
+
+document.getElementById('inquiryForm').addEventListener('submit', function(e) {
+    const cid = document.getElementById('customerId').value;
+    if (!cid || cid.trim() === '') {
+        e.preventDefault();
+        document.getElementById('customerError').style.display = 'block';
+        document.getElementById('customerSearch').focus();
+        document.getElementById('customerSearch').classList.add('is-invalid');
+    }
+});
+
+let searchTimeout;
+document.getElementById('customerSearch').addEventListener('input', function() {
+    const currentName = this.value.trim();
+    const origName    = this.getAttribute('data-original-name') || '';
+    document.getElementById('customerId').value = (currentName === origName) ? originalCustomerId : '';
+    document.getElementById('customerError').style.display = 'none';
+    this.classList.remove('is-invalid');
+    clearTimeout(searchTimeout);
+    if (currentName.length < 2) {
+        document.getElementById('customerResults').style.display = 'none';
+        return;
+    }
+    searchTimeout = setTimeout(() => {
+        fetch('/api/customers/search?q=' + encodeURIComponent(currentName))
+            .then(r => r.json())
+            .then(data => {
+                const box = document.getElementById('customerResults');
+                box.innerHTML = '';
+                if (!data.length) { box.style.display = 'none'; return; }
+                data.forEach(c => {
+                    const a = document.createElement('a');
+                    a.className = 'list-group-item list-group-item-action';
+                    a.innerHTML = `<strong>${c.customerName}</strong> <span class="text-muted small">${c.mobileNumber}</span>`;
+                    a.href = '#';
+                    a.addEventListener('click', ev => {
+                        ev.preventDefault();
+                        document.getElementById('customerSearch').value = c.customerName;
+                        document.getElementById('customerSearch').setAttribute('data-original-name', c.customerName);
+                        document.getElementById('customerId').value = c.id;
+                        originalCustomerId = c.id; originalCustomerName = c.customerName;
+                        document.getElementById('customerError').style.display = 'none';
+                        document.getElementById('customerSearch').classList.remove('is-invalid');
+                        box.style.display = 'none';
+                    });
+                    box.appendChild(a);
+                });
+                box.style.display = 'block';
+            });
+    }, 300);
+});
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#customerSearch') && !e.target.closest('#customerResults')) {
+        document.getElementById('customerResults').style.display = 'none';
+        const s = document.getElementById('customerSearch');
+        const c = document.getElementById('customerId');
+        if (s.value.trim() === (s.getAttribute('data-original-name') || '') && originalCustomerId && !c.value)
+            c.value = originalCustomerId;
+    }
+});
+
+// ── EMI auto-calculate ──────────────────────────────────────────
+function calcEmi() {
+    const p = parseFloat(document.querySelector('[name=loanAmount]')?.value);
+    const r = parseFloat(document.querySelector('[name=interestRate]')?.value);
+    const n = parseInt(document.querySelector('[name=tenureMonths]')?.value);
+    if (p > 0 && r > 0 && n > 0) {
+        const mr = r / (12 * 100);
+        document.getElementById('emiDisplay').value =
+            ((p * mr * Math.pow(1+mr,n)) / (Math.pow(1+mr,n) - 1)).toFixed(2);
+    }
+}
+document.querySelector('[name=loanAmount]')?.addEventListener('input', calcEmi);
+document.querySelector('[name=interestRate]')?.addEventListener('input', calcEmi);
+document.querySelector('[name=tenureMonths]')?.addEventListener('input', calcEmi);
+
+// ── Co-applicant toggle ─────────────────────────────────────────
+const hasCoApp  = document.getElementById('hasCoApplicant');
+const coSection = document.getElementById('coApplicantSection');
+// Auto-show if data already exists (edit mode)
+if (document.querySelector('[name="coapplicantPan"]')?.value) {
+    hasCoApp.checked = true;
+    coSection.style.display = 'block';
+}
+hasCoApp.addEventListener('change', () => {
+    coSection.style.display = hasCoApp.checked ? 'block' : 'none';
+});
+
+// ── Occupation: show/hide relevant fields ───────────────────────
+function toggleOccupation(val) {
+    const showSalaried = ['SALARIED','PROFESSIONAL','RETIRED'].includes(val);
+    const showSelf     = ['SELF_EMPLOYED','PROFESSIONAL'].includes(val);
+    document.querySelectorAll('.occ-salaried').forEach(el =>
+        el.style.display = showSalaried ? '' : 'none');
+    document.querySelectorAll('.occ-selfemployed').forEach(el =>
+        el.style.display = showSelf ? '' : 'none');
+}
+const occSel = document.getElementById('applicantOccupationSelect');
+toggleOccupation(occSel?.value || '');
+occSel?.addEventListener('change', function() { toggleOccupation(this.value); });
+
+// ── Insurance documents checklist ──────────────────────────────
+const insuranceTypeMap = {
+    'term insurance':    'ins_term',
+    'endowment':         'ins_endowment',
+    'saving plan':       'ins_endowment',
+    'health insurance':  'ins_health',
+    'general insurance': 'ins_general',
+    'vehicle insurance': 'ins_vehicle',
+    'motor insurance':   'ins_vehicle',
+    'marine insurance':  'ins_marine'
+};
+function showInsuranceDocs(sel) {
+    const panel = document.getElementById('insuranceDocsPanel');
+    const label = document.getElementById('insTypeLabel');
+    const text  = (sel.options[sel.selectedIndex]?.text || '').toLowerCase();
+    const isIns = ['insurance','endowment','saving plan','marine'].some(k => text.includes(k));
+    document.querySelectorAll('.ins-type-docs').forEach(d => d.style.display = 'none');
+    if (sel.value && isIns) {
+        panel.style.display = 'block';
+        label.textContent = '— ' + sel.options[sel.selectedIndex].text;
+        for (const [k,id] of Object.entries(insuranceTypeMap))
+            if (text.includes(k)) { const el = document.getElementById(id); if(el) el.style.display='block'; }
+    } else {
+        panel.style.display = 'none';
+    }
+}
+const iqSel = document.getElementById('inquiryTypeSelect');
+if (iqSel) {
+    iqSel.addEventListener('change', () => showInsuranceDocs(iqSel));
+    if (iqSel.value) showInsuranceDocs(iqSel);
+}
+</script>
+</th:block>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'audit', 'Audit Logs')}">
+<th:block th:fragment="content">
+<div class="mb-4 mt-2">
+    <h5 class="fw-bold">Audit Logs</h5>
+    <p class="text-muted small">System activity and user action trail.</p>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:13px;">
+                <thead class="table-dark">
+                    <tr><th>Date/Time</th><th>User</th><th>Action</th><th>Entity</th><th>IP Address</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="log : ${logs.content}">
+                        <td th:text="${#temporals.format(log.createdAt,'dd-MM-yyyy HH:mm:ss')}"></td>
+                        <td><span class="badge bg-secondary" th:text="${log.username ?: 'system'}"></span></td>
+                        <td><span class="badge bg-primary-subtle text-primary" th:text="${log.action}"></span></td>
+                        <td th:text="${log.entityType != null ? log.entityType + (log.entityId != null ? ' #'+log.entityId : '') : '-'}"></td>
+                        <td class="text-muted" th:text="${log.ipAddress ?: '-'}"></td>
+                        <td>
+                            <span th:if="${log.status.name() == 'SUCCESS'}" class="badge bg-success">Success</span>
+                            <span th:unless="${log.status.name() == 'SUCCESS'}" class="badge bg-danger">Failed</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${logs.empty}">
+                        <td colspan="6" class="text-center py-4 text-muted">No audit logs found.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-between" th:if="${totalPages > 1}">
+        <span class="text-muted small">Page <span th:text="${currentPage+1}"></span> of <span th:text="${totalPages}"></span></span>
+        <nav><ul class="pagination pagination-sm mb-0">
+            <li class="page-item" th:classappend="${currentPage==0}?'disabled'">
+                <a class="page-link" th:href="@{/admin/audit-logs(page=${currentPage-1})}">«</a></li>
+            <li class="page-item" th:each="p : ${#numbers.sequence(0, [[ [totalPages - 1, 9].stream().min(Integer::compareTo).orElse(0) ]])}"
+                th:classappend="${p==currentPage}?'active'">
+                <a class="page-link" th:href="@{/admin/audit-logs(page=${p})}" th:text="${p+1}"></a></li>
+            <li class="page-item" th:classappend="${currentPage+1>=totalPages}?'disabled'">
+                <a class="page-link" th:href="@{/admin/audit-logs(page=${currentPage+1})}">»</a></li>
+        </ul></nav>
+    </div>
+</div>
+</th:block>
+</html>

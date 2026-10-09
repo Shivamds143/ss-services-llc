@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content, extraJs, extraCss, activeMenu, pageTitle)">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="_csrf"        th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${pageTitle != null} ? ${pageTitle} + ' | FinancialCRM' : 'Financial CRM System'">
+        Financial CRM
+    </title>
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}"/>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.2/css/all.min.css}"/>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+
+    <!--
+        FIX: Use th:insert instead of th:replace, and wrap in th:block
+        with th:if OUTSIDE the element that has th:insert.
+        In Thymeleaf 3.1, th:replace evaluates the fragment expression
+        immediately even when combined with th:if on the SAME element.
+        Splitting into an outer th:if guard and inner th:insert solves this.
+    -->
+    <th:block th:if="${extraCss != null and not #strings.isEmpty(extraCss.toString())}">
+        <th:block th:insert="${extraCss}"></th:block>
+    </th:block>
+</head>
+
+<body class="crm-body">
+<div class="d-flex" id="wrapper">
+    <aside id="sidebar-wrapper" class="crm-sidebar">
+        <div class="sidebar-heading px-3 py-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-mark">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <div class="fw-bold fs-5 text-white">SS Services LLP</div>
+                    <div class="sidebar-subtitle">We care we secure & makes smile per life</div>
+                </div>
+            </div>
+        </div>
+<!--
+<div class="d-flex gap-2 mt-3">
+    <form th:action="@{/admin/emails/send-birthday-now}" method="post">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-birthday-cake"></i> Send Birthday Emails Now
+        </button>
+    </form>
+
+    <form th:action="@{/admin/emails/send-anniversary-now}" method="post">
+        <button type="submit" class="btn btn-danger">
+            <i class="fa fa-heart"></i> Send Anniversary Emails Now
+        </button>
+    </form>
+</div>  -->
+        <div class="list-group list-group-flush sidebar-nav">
+
+            <a th:href="@{/dashboard}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'dashboard'} ? 'active' : ''">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+
+            <a th:href="@{/customers}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'customers'} ? 'active' : ''">
+                <i class="fas fa-users me-2"></i>Customers
+            </a>
+
+            <a th:href="@{/inquiries}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'inquiries'} ? 'active' : ''">
+                <i class="fas fa-file-alt me-2"></i>Inquiries
+            </a>
+
+            <a th:href="@{/appointments}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'appointments'} ? 'active' : ''">
+                <i class="fas fa-calendar-check me-2"></i>Appointments
+            </a>
+
+            <a th:href="@{/followups}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'followups'} ? 'active' : ''">
+                <i class="fas fa-phone-alt me-2"></i>Follow-ups
+            </a>
+
+           <div sec:authorize="hasAnyRole('ADMIN','RECEPTIONIST')">
+
+    <a th:href="@{/employees}"
+       class="list-group-item list-group-item-action sidebar-link"
+       th:classappend="${activeMenu == 'employees'} ? 'active' : ''">
+        <i class="fas fa-id-badge me-2"></i>Employees
+    </a>
+
+    <a th:href="@{/attendance}"
+       class="list-group-item list-group-item-action sidebar-link"
+       th:classappend="${activeMenu == 'attendance'} ? 'active' : ''">
+        <i class="fas fa-clipboard-check me-2"></i>Attendance
+    </a>
+
+    <!-- Work Tracking -->
+    <a th:href="@{/work-tracking}"
+       class="list-group-item list-group-item-action sidebar-link"
+       th:classappend="${activeMenu == 'work-tracking'} ? 'active' : ''">
+        <i class="fas fa-chart-line me-2"></i>Work Tracking
+    </a>
+
+   </div>
+            <!-- My Work Log: every authenticated employee can see this,
+                 not just ADMIN/RECEPTIONIST — matches @PreAuthorize("isAuthenticated()")
+                 on WorkTrackingController#myWork() -->
+            <a th:href="@{/work-tracking/my-work}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'my-work'} ? 'active' : ''">
+                <i class="fas fa-user-clock me-2"></i>My Work Log
+            </a>
+
+
+            <a th:href="@{/expenses}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'expenses'} ? 'active' : ''">
+                <i class="fas fa-minus-circle me-2 text-danger"></i>Expenses
+            </a>
+            
+            <a th:href="@{/utility-bills}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'utility-bills'} ? 'active' : ''">
+                <i class="fas fa-bell me-2 text-warning"></i>Utility Reminders
+            </a>
+
+            <a th:href="@{/income}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'income'} ? 'active' : ''">
+                <i class="fas fa-plus-circle me-2 text-success"></i>Income
+            </a>
+
+            <a th:href="@{/calculator}"
+               class="list-group-item list-group-item-action sidebar-link"
+               th:classappend="${activeMenu == 'calculator'} ? 'active' : ''">
+                <i class="fas fa-calculator me-2"></i>Calculators
+            </a>
+
+            <div sec:authorize="hasAnyRole('ADMIN','RECEPTIONIST')">
+                <a th:href="@{/reports}"
+                   class="list-group-item list-group-item-action sidebar-link"
+                   th:classappend="${activeMenu == 'reports'} ? 'active' : ''">
+                    <i class="fas fa-chart-bar me-2"></i>Reports
+                </a>
+            </div>
+
+            <div sec:authorize="hasRole('ADMIN')">
+                <div class="sidebar-divider my-1 mx-3 border-secondary border-top"></div>
+               <a th:href="@{/whatsapp}"
+                  class="list-group-item list-group-item-action sidebar-link"
+                  th:classappend="${activeMenu == 'whatsapp'} ? 'active' : ''">
+                   <i class="fas fa-envelope me-2 text-danger"></i>Email
+               </a>
+                <a th:href="@{/admin/users}"
+                   class="list-group-item list-group-item-action sidebar-link"
+                   th:classappend="${activeMenu == 'users'} ? 'active' : ''">
+                    <i class="fas fa-user-cog me-2"></i>User Management
+                </a>
+                <a th:href="@{/admin/audit-logs}"
+                   class="list-group-item list-group-item-action sidebar-link"
+                   th:classappend="${activeMenu == 'audit'} ? 'active' : ''">
+                    <i class="fas fa-history me-2"></i>Audit Logs
+                </a>
+            </div>
+
+        </div>
+    </aside>
+
+    <div id="page-content-wrapper" class="flex-grow-1">
+        <nav class="navbar navbar-expand-lg crm-topbar">
+            <button class="btn btn-sm btn-light topbar-icon" id="sidebarToggle" type="button">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="ms-3">
+                <div class="topbar-label">Workspace</div>
+                <div class="navbar-brand mb-0 fw-semibold" th:text="${pageTitle ?: 'Dashboard'}"></div>
+            </div>
+
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <a th:href="@{/notifications}" class="topbar-icon text-decoration-none position-relative">
+                    <i class="fas fa-bell fs-6"></i>
+                    <span th:if="${unreadNotifications != null and unreadNotifications > 0}"
+                          class="notification-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          th:text="${unreadNotifications}">0</span>
+                </a>
+
+                <div class="dropdown">
+                    <a href="#"
+                       class="topbar-user d-flex align-items-center text-decoration-none dropdown-toggle"
+                       data-bs-toggle="dropdown">
+                        <div class="avatar-circle text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                            <sec:authentication property="name"
+                                th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}"/>
+                        </div>
+                        <span class="d-none d-md-block fw-semibold user-name">
+                            <sec:authentication property="name"/>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 premium-dropdown">
+                        <li><h6 class="dropdown-header">My Account</h6></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/change-password}">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"/></li>
+                        <li>
+                            <form th:action="@{/auth/logout}" method="post">
+                                <input type="hidden"
+                                       th:name="${_csrf.parameterName}"
+                                       th:value="${_csrf.token}"/>
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </nav>
+
+        <div class="container-fluid px-3 px-lg-4 mt-3">
+            <div th:if="${successMsg}"
+                 class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}"
+                 class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${infoMsg}"
+                 class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <span th:text="${infoMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+
+        <div class="container-fluid px-3 px-lg-4 pb-5">
+            <div class="content-shell">
+                <th:block th:insert="${content}"></th:block>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════ -->
+<script th:src="@{/webjars/jquery/3.7.1/jquery.min.js}"></script>
+<script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+
+<!--
+    FIX: Same pattern as extraCss — outer th:if guard on a separate
+    th:block, inner th:insert on a nested th:block.
+    This guarantees the fragment expression is never evaluated when null.
+-->
+<th:block th:if="${extraJs != null and not #strings.isEmpty(extraJs.toString())}">
+    <th:block th:insert="${extraJs}"></th:block>
+</th:block>
+
+<script>
+    /* Auto-dismiss alerts after 5 s (fallback in case app.js hasn't run yet) */
+    setTimeout(function () {
+        document.querySelectorAll('.alert').forEach(function (el) {
+            bootstrap.Alert.getOrCreateInstance(el).close();
+        });
+    }, 5000);
+</script>
+
+</body>
+</html>

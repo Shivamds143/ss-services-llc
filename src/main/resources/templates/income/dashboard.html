@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::content}, ~{::extraJs}, ~{}, 'income-dashboard', 'Income Dashboard')}">
+
+<th:block th:fragment="content">
+
+<!-- ─────────────────────────────────────────────
+     KPI CARDS ROW
+     ───────────────────────────────────────────── -->
+<div class="row g-3 mt-1">
+
+    <!-- Today's Income -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon bg-success-subtle rounded-3 p-3 me-3">
+                    <i class="fas fa-calendar-day fs-4 text-success"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">
+                        ₹<span th:text="${#numbers.formatDecimal(todayIncome ?: 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">Today's Income</div>
+                    <div class="text-muted" style="font-size:11px;"
+                         th:text="${todayCount} + ' entries'">0 entries</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Income -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon bg-primary-subtle rounded-3 p-3 me-3">
+                    <i class="fas fa-calendar-alt fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">
+                        ₹<span th:text="${#numbers.formatDecimal(monthlyIncome ?: 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">This Month</div>
+                    <div class="text-muted" style="font-size:11px;"
+                         th:text="${monthlyCount} + ' entries'">0 entries</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yearly Income -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon bg-info-subtle rounded-3 p-3 me-3">
+                    <i class="fas fa-calendar fs-4 text-info"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">
+                        ₹<span th:text="${#numbers.formatDecimal(yearlyIncome ?: 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">This Year</div>
+                    <div class="text-muted" style="font-size:11px;"
+                         th:text="${yearlyCount} + ' entries'">0 entries</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Income -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm kpi-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="kpi-icon bg-warning-subtle rounded-3 p-3 me-3">
+                    <i class="fas fa-coins fs-4 text-warning"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">
+                        ₹<span th:text="${#numbers.formatDecimal(totalIncome ?: 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="text-muted small">All-Time Total</div>
+                    <div class="text-muted" style="font-size:11px;"
+                         th:text="${totalCount} + ' entries'">0 entries</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────
+     TOP CATEGORY + QUICK ACTIONS
+     ───────────────────────────────────────────── -->
+<div class="row g-3 mt-1">
+
+    <!-- Top Income Category -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success text-Black py-2 px-3">
+                <i class="fas fa-trophy me-2"></i>Top Income Categories (This Month)
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush" th:if="${topCategories != null and not #lists.isEmpty(topCategories)}">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3"
+                        th:each="cat, stat : ${topCategories}" th:if="${stat.index < 5}">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill text-bg-success" th:text="${stat.index + 1}">1</span>
+                            <span class="small fw-semibold" th:text="${cat[0]}">Category</span>
+                        </div>
+                        <span class="text-success fw-bold small">
+                            ₹<span th:text="${#numbers.formatDecimal(cat[1], 0, 'COMMA', 0, 'POINT')}">0</span>
+                        </span>
+                    </li>
+                </ul>
+                <div th:if="${topCategories == null or #lists.isEmpty(topCategories)}"
+                     class="text-center py-4 text-muted small">No data available</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Mode Breakdown (mini) -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-info text-Black py-2 px-3">
+                <i class="fas fa-credit-card me-2"></i>Payment Mode (This Month)
+            </div>
+            <div class="card-body p-2">
+                <canvas id="paymentPieChart" style="max-height:200px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-dark text-Black py-2 px-3">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a th:href="@{/income-entries/new}" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus me-2"></i>Record New Income
+                </a>
+                <a th:href="@{/income-entries}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list me-2"></i>View All Entries
+                </a>
+                <a th:href="@{/income-categories}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-tags me-2"></i>Manage Categories
+                </a>
+                <a th:href="@{/income-reports}" class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-chart-bar me-2"></i>Income Reports
+                </a>
+                <a th:href="@{/income-reports?type=monthly}" class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-file-pdf me-2"></i>Monthly Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────
+     CHARTS ROW
+     ───────────────────────────────────────────── -->
+<div class="row g-3 mt-1">
+
+    <!-- Monthly Income Trend -->
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-semibold"><i class="fas fa-chart-line text-success me-2"></i>Monthly Income Trend</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="trendYear" class="form-select form-select-sm" style="width:100px;">
+                        <option th:each="y : ${#numbers.sequence(currentYear - 2, currentYear)}"
+                                th:value="${y}" th:text="${y}"
+                                th:selected="${y == currentYear}">2026</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="monthlyTrendChart" style="height:260px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income by Category (Doughnut) -->
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-2 px-3">
+                <span class="fw-semibold"><i class="fas fa-chart-pie text-primary me-2"></i>Income by Category</span>
+            </div>
+            <div class="card-body p-3 d-flex justify-content-center align-items-center">
+                <canvas id="categoryDoughnutChart" style="max-height:260px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────
+     RECENT ENTRIES TABLE
+     ───────────────────────────────────────────── -->
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-semibold"><i class="fas fa-history text-secondary me-2"></i>Recent Income Entries</span>
+                <a th:href="@{/income-entries}" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Customer</th>
+                            <th>Employee</th>
+                            <th>Amount</th>
+                            <th>Mode</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${recentEntries}">
+                            <td class="small" th:text="${#temporals.format(e.incomeDate,'dd-MM-yyyy')}"></td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle"
+                                      th:text="${e.categoryName}">-</span>
+                            </td>
+                            <td class="small" th:text="${e.customerName ?: '-'}"></td>
+                            <td class="small" th:text="${e.employeeName ?: '-'}"></td>
+                            <td class="fw-semibold text-success small">
+                                ₹<span th:text="${#numbers.formatDecimal(e.amount, 0, 'COMMA', 2, 'POINT')}"></span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary" th:text="${e.paymentModeDisplay}">-</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/income-entries/{id}(id=${e.id})}"
+                                   class="btn btn-sm btn-outline-success"><i class="fas fa-eye"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${recentEntries == null or #lists.isEmpty(recentEntries)}">
+                            <td colspan="7" class="text-center py-4 text-muted">No recent entries found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+</th:block>
+
+<!-- ─────────────────────────────────────────────
+     EXTRA JS: Chart.js charts
+     ───────────────────────────────────────────── -->
+<th:block th:fragment="extraJs">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+
+// ── Monthly Trend Chart ────────────────────────────────────────────────────
+const monthlyLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let monthlyTotalsData = /*[[${monthlyTotalsJson}]]*/ {};
+
+function buildTrendChart(data) {
+    const values = monthlyLabels.map((_, i) => data[i + 1] || 0);
+    const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+    if (window._trendChart) window._trendChart.destroy();
+    window._trendChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Income (₹)',
+                data: values,
+                backgroundColor: 'rgba(52,168,83,0.7)',
+                borderColor: '#34a853',
+                borderWidth: 2,
+                borderRadius: 6,
+                hoverBackgroundColor: '#34a853'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
+                }
+            }
+        }
+    });
+}
+
+buildTrendChart(monthlyTotalsData);
+
+document.getElementById('trendYear').addEventListener('change', function() {
+    fetch('/income-entries/api/monthly-totals?year=' + this.value)
+        .then(r => r.json())
+        .then(data => buildTrendChart(data));
+});
+
+// ── Category Doughnut ──────────────────────────────────────────────────────
+const catData   = /*[[${categoryChartData}]]*/ [];
+const catLabels = catData.map(d => d[0]);
+const catVals   = catData.map(d => parseFloat(d[1]));
+const catColors = ['#1a73e8','#34a853','#fbbc04','#ea4335','#0097a7','#9c27b0','#ff5722','#607d8b'];
+
+new Chart(document.getElementById('categoryDoughnutChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+        labels: catLabels,
+        datasets: [{ data: catVals, backgroundColor: catColors.slice(0, catLabels.length), borderWidth: 2 }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+            tooltip: { callbacks: { label: ctx => ' ₹' + ctx.parsed.toLocaleString('en-IN') } }
+        }
+    }
+});
+
+// ── Payment Mode Pie ───────────────────────────────────────────────────────
+const pmData   = /*[[${paymentModeData}]]*/ [];
+const pmLabels = pmData.map(d => d[0]);
+const pmVals   = pmData.map(d => parseFloat(d[1]));
+
+if (pmVals.length > 0) {
+    new Chart(document.getElementById('paymentPieChart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: pmLabels,
+            datasets: [{ data: pmVals, backgroundColor: catColors.slice(0, pmLabels.length), borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } }
+            }
+        }
+    });
+}
+/*]]>*/
+</script>
+</th:block>
+</html>

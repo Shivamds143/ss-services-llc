@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'utility-bills', 'Utility Bill')}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <h5 class="fw-bold">Add / Edit Utility Bill</h5>
+    <a th:href="@{/utility-bills}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:750px;">
+    <div class="card-body p-4">
+        <form th:action="${bill.id == null ? '/utility-bills/save' : '/utility-bills/' + bill.id + '/save'}"
+              method="post" th:object="${bill}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Bill Name <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{billName}" class="form-control" required placeholder="e.g. Electricity Bill - June"/>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                    <select name="categoryId" class="form-select" required>
+                        <option value="">-- Select Category --</option>
+                        <option th:each="c : ${categories}"
+                                th:value="${c.id}"
+                                th:text="${c.parent != null ? '— ' + c.categoryName : c.categoryName}"
+                                th:selected="${bill.category != null and bill.category.id == c.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Amount (₹) <span class="text-danger">*</span></label>
+                    <input type="number" th:field="*{amount}" class="form-control" step="0.01" min="0" required/>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Due Date <span class="text-danger">*</span></label>
+                    <input type="date" th:field="*{dueDate}" class="form-control" required/>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Recurrence</label>
+                    <select th:field="*{recurrenceType}" class="form-select">
+                        <option th:each="r : ${recurrenceTypes}" th:value="${r}" th:text="${r}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Remind (days before due)</label>
+                    <input type="number" th:field="*{reminderDaysBefore}" class="form-control" min="0" max="30"/>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Notes</label>
+                    <textarea th:field="*{notes}" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4"/>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-save me-2"></i>Save
+                </button>
+                <a th:href="@{/utility-bills}" class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</th:block>
+</html>

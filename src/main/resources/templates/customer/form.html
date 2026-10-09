@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::content}, null, null, 'customers',
+                  ${customer.id == null ? 'Add Customer' : 'Edit Customer'})}">
+<th:block th:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h5 class="mb-1 fw-bold text-dark" th:text="${customer.id == null ? 'Add New Customer' : 'Edit Customer'}"></h5>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/customers}">Customers</a></li>
+            <li class="breadcrumb-item active" th:text="${customer.id == null ? 'New' : 'Edit'}"></li>
+        </ol></nav>
+    </div>
+    <a th:href="@{/customers}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-primary text-white py-3">
+        <h6 class="mb-0"><i class="fas fa-user-plus me-2"></i>Customer Information</h6>
+    </div>
+    <div class="card-body p-4">
+        <form th:action="${customer.id == null ? '/customers/save' : '/customers/' + customer.id + '/update'}"
+              method="post" th:object="${customer}" novalidate>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" th:field="*{id}" th:if="${customer.id != null}"/>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{customerName}" class="form-control"
+                           th:classappend="${#fields.hasErrors('customerName')} ? 'is-invalid'"
+                           placeholder="Full name"/>
+                    <div class="invalid-feedback" th:errors="*{customerName}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Mobile Number <span class="text-danger">*</span></label>
+                    <input type="tel" th:field="*{mobileNumber}" class="form-control"
+                           th:classappend="${#fields.hasErrors('mobileNumber')} ? 'is-invalid'"
+                           placeholder="10-digit mobile"/>
+                    <div class="invalid-feedback" th:errors="*{mobileNumber}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Alternate Mobile</label>
+                    <input type="tel" th:field="*{alternateMobile}" class="form-control" placeholder="Alternate number"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control" placeholder="email@example.com"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Inquiry Date <span class="text-danger">*</span></label>
+                    <input type="date" th:field="*{inquiryDate}" class="form-control"
+                           th:value="${customer.inquiryDate != null ? customer.inquiryDate : today}"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Reference Name</label>
+                    <input type="text" th:field="*{referenceName}" class="form-control" placeholder="Who referred this customer"/>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-semibold">Address</label>
+                    <textarea th:field="*{address}" class="form-control" rows="2" placeholder="Full address"></textarea>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">City</label>
+                    <input type="text" th:field="*{city}" class="form-control" placeholder="City"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">State</label>
+                    <input type="text" th:field="*{state}" class="form-control" placeholder="State"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Pincode</label>
+                    <input type="text" th:field="*{pincode}" class="form-control" placeholder="6-digit pincode" maxlength="6"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Date of Birth</label>
+                    <input type="date" th:field="*{dateOfBirth}" class="form-control"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Anniversary Date</label>
+                    <input type="date" th:field="*{anniversaryDate}" class="form-control"/>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-semibold">Notes</label>
+                    <textarea th:field="*{notes}" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4"/>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-save me-2"></i>
+                    <span th:text="${customer.id == null ? 'Save Customer' : 'Update Customer'}">Save</span>
+                </button>
+                <a th:href="@{/customers}" class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</th:block>
+</html>
